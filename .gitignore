@@ -1,0 +1,7 @@
+*.pyc
+*.swp
+*.swo
+*.log
+auth_cache_*
+config.json
+

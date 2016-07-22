@@ -159,7 +159,7 @@ class PGoApi:
             for item in res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items']:
                 if 'player_stats' in item['inventory_item_data']:
                     stats = item['inventory_item_data']['player_stats']
-                    self.log.info("Level: %d, Experience: %d, KM walked: %f, Pokedex: %d", stats['level'], stats['experience'], stats['km_walked'], stats['unique_pokedex_entries'])
+                    self.log.info("Level: %d, Experience: %d, KM walked: %f, Pokedex: %d", stats.get('level', 0), stats.get('experience',0), stats.get('km_walked',0), stats.get('unique_pokedex_entries',0))
         return res
 
 
@@ -310,6 +310,7 @@ class PGoApi:
         # begin encounter_id
         position = self._posf # FIXME ?
         resp = self.encounter(encounter_id=encounter_id,spawn_point_id=spawn_point_id,player_latitude=position[0],player_longitude=position[1]).call()['responses']['ENCOUNTER']
+
         if resp['status'] == 1:
             capture_status = -1
             cp = resp['wild_pokemon']['pokemon_data'].get('cp', CP_CUTOFF)
@@ -317,8 +318,10 @@ class PGoApi:
             iva = resp['wild_pokemon']['pokemon_data'].get('individual_attack', 0)
             ivd = resp['wild_pokemon']['pokemon_data'].get('individual_defense', 0)
             ivs = resp['wild_pokemon']['pokemon_data'].get('individual_stamina', 0)
+            cap_prob = resp.get('capture_probability').get('capture_probability')
             iv = ((iva+ivd+ivs)/45.0)*100
-            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d", id, cp, iv, iva, ivd, ivs)
+            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", id, cp, iv, iva, ivd, ivs, cap_prob)
+            #self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d", id, cp, iv, iva, ivd, ivs)
             #{'capture_probability': [0.41520917415618896, 0.5528010129928589, 0.6580196619033813], 'pokeball_type': [1, 2, 3]}}
 
 
