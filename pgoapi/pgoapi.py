@@ -288,6 +288,8 @@ class PGoApi:
                 if ball_amount > 0 and cap_prob[ball_nr-1] > 0.5:
                     pokeball = ball_nr
                     break
+
+        inventory_balls[pokeball-1] = inventory_balls[pokeball-1]-1
         # CATCH_SUCCESS = 1; CATCH_ESCAPE = 2;
         status = 2
         self.log.info("Will use Ball %d for CP: %d, IV: %f and Probability: %f", pokeball, cp, iv, cap_prob[pokeball-1])
