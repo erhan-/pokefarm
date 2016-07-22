@@ -52,9 +52,14 @@ from POGOProtos.Networking.Requests.RequestType_pb2 import RequestType
 
 logger = logging.getLogger(__name__)
 
+
+# Global variables
+
 CP_CUTOFF = 0 # release anything under this if we don't have it already
 #BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
 BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
+
+inventory_balls = [0, 0, 0]
 
 class PGoApi:
 
@@ -145,6 +150,7 @@ class PGoApi:
 
 
     def heartbeat(self):
+        global inventory_balls
         # making a standard call, like it is also done by the client
         self.get_player()
         self.get_hatched_eggs()
@@ -159,7 +165,13 @@ class PGoApi:
             for item in res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items']:
                 if 'player_stats' in item['inventory_item_data']:
                     stats = item['inventory_item_data']['player_stats']
-                    self.log.info("Level: %d, Experience: %d, KM walked: %f, Pokedex: %d", stats['level'], stats['experience'], stats['km_walked'], stats['unique_pokedex_entries'])
+                    self.log.info("Level: %d, Experience: %d, KM walked: %f, Pokedex: %d", stats.get('level', 0), stats.get('experience', 0), stats.get('km_walked', 0), stats.get('unique_pokedex_entries',0))
+                if 'item' in item['inventory_item_data']:
+                    if ('count' in item['inventory_item_data']['item']) and ('item_id' in item['inventory_item_data']['item']):
+                        id = item['inventory_item_data']['item']['item_id']
+                        # 1 Pokeball, 2 Superball, 3 Ultraball
+                        if id < 4 and id > 0 :
+                            inventory_balls[id-1] = item['inventory_item_data']['item'].get('count', 0)
         return res
 
 
@@ -176,7 +188,7 @@ class PGoApi:
                 self.log.info("sleeping before next heartbeat")
                 sleep(1)
                 while self.catch_near_pokemon():
-                    sleep(0.25)
+                    sleep(1)
 
     def spin_near_fort(self):
         try:
@@ -212,9 +224,17 @@ class PGoApi:
         if resp['result'] == 1:
             self.log.info("Started Disk Encounter, Pokemon ID: %s", resp['pokemon_data']['pokemon_id'])
             capture_status = -1
+            cp = resp['pokemon_data'].get('cp', CP_CUTOFF)
+            id = resp['pokemon_data'].get('pokemon_id', 0)
+            iva = resp['pokemon_data'].get('individual_attack', 0)
+            ivd = resp['pokemon_data'].get('individual_defense', 0)
+            ivs = resp['pokemon_data'].get('individual_stamina', 0)
+            cap_prob = resp.get('capture_probability').get('capture_probability')
+            iv = ((iva+ivd+ivs)/45.0)*100
+            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", id, cp, iv, iva, ivd, ivs, cap_prob)
             # while capture_status != RpcEnum.CATCH_ERROR and capture_status != RpcEnum.CATCH_FLEE:
             while capture_status != 0 and capture_status != 3:
-                catch_attempt = self.attempt_catch(encounter_id,fort_id)
+                catch_attempt = self.attempt_catch(encounter_id, fort_id, cp,iv, cap_prob)
                 capture_status = catch_attempt['status']
                 # if status == RpcEnum.CATCH_SUCCESS:
                 if capture_status == 1:
@@ -250,19 +270,52 @@ class PGoApi:
         neighbors = getNeighbors(self._posf)
         return self.get_map_objects(latitude=position[0], longitude=position[1], since_timestamp_ms=[0]*len(neighbors), cell_id=neighbors).call()
 
-    def attempt_catch(self,encounter_id,spawn_point_id):
-        for i in range(1,4):
-            r = self.catch_pokemon(
+    def attempt_catch(self, encounter_id, spawn_point_id, cp, iv, cap_prob):
+        # Catch depending on ball amount, cp, iv and cap_prob
+
+        # Throw normal ball if we don't care but also check if we even have one, get the worst ball
+        for ball_nr, ball_amount in enumerate(inventory_balls, start=1):
+            if ball_amount > 0:
+                pokeball = ball_nr
+                break
+
+        # If it is a good pokemon then we reaaally want it!
+        if ((cp > CP_CUTOFF) or (iv > 80)) and inventory_balls[2] > 0:
+            pokeball = 3
+        else:
+            for ball_nr, ball_amount in enumerate(inventory_balls, start=1):
+                # Check if we have enough balls and if the probability is acceptable
+                if ball_amount > 0 and cap_prob[ball_nr-1] > 0.5:
+                    pokeball = ball_nr
+                    break
+        # CATCH_SUCCESS = 1; CATCH_ESCAPE = 2;
+        status = 2
+        self.log.info("Will use Ball %d for CP: %d, IV: %f and Probability: %f", pokeball, cp, iv, cap_prob[pokeball-1])
+
+        # Try again if the Pokemon escapes from the Pokeball
+        while(status == 2):
+            resp = self.catch_pokemon(
                 normalized_reticle_size= 1.950,
-                pokeball = i,
+                pokeball = pokeball,
                 spin_modifier= 0.850,
                 hit_pokemon=True,
                 normalized_hit_position=1,
                 encounter_id=encounter_id,
                 spawn_point_guid=spawn_point_id,
                 ).call()['responses']['CATCH_POKEMON']
-            if "status" in r:
-                return r
+            if "status" in resp:
+                # Check if the catch was successful
+                if resp['status'] == 1:
+                    return resp
+                else:
+                    # Else set the status so that it goes on when 2 or quits if something else
+                    status = resp['status']
+            else:
+                return resp
+            self.log.info("Pokemon escaped. Retrying ...")
+            sleep(1)
+        return resp
+
 
 
     def cleanup_inventory(self, inventory_items=None):
@@ -317,16 +370,16 @@ class PGoApi:
             iva = resp['wild_pokemon']['pokemon_data'].get('individual_attack', 0)
             ivd = resp['wild_pokemon']['pokemon_data'].get('individual_defense', 0)
             ivs = resp['wild_pokemon']['pokemon_data'].get('individual_stamina', 0)
+            cap_prob = resp.get('capture_probability').get('capture_probability')
             iv = ((iva+ivd+ivs)/45.0)*100
-            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d", id, cp, iv, iva, ivd, ivs)
+            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", id, cp, iv, iva, ivd, ivs, cap_prob)
             #{'capture_probability': [0.41520917415618896, 0.5528010129928589, 0.6580196619033813], 'pokeball_type': [1, 2, 3]}}
-
 
 
             # while capture_status != RpcEnum.CATCH_ERROR and capture_status != RpcEnum.CATCH_FLEE:
             # check the cp of the pokemon and throw different ball or also berry
             while capture_status != 0 and capture_status != 3:
-                catch_attempt = self.attempt_catch(encounter_id,spawn_point_id)
+                catch_attempt = self.attempt_catch(encounter_id, spawn_point_id, cp, iv, cap_prob)
                 status = catch_attempt['status']
                 # if status == RpcEnum.CATCH_SUCCESS:
                 if status == 1:

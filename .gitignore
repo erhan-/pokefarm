@@ -1,0 +1,10 @@
+# Ignore configuration files
+config.json
+# Ignore auth_cache files
+auth_cache_*
+
+# Ignore .pyc and other files
+*.pyc
+*.swp
+*.swo
+*.log

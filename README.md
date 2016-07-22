@@ -1,10 +1,13 @@
+## Pokefarm
+
+Version 0.1
+
+
+Basierend auf:
+
 # pgoapi - a python pokemon go api lib/demo
 pgoapi is a client/api/demo for Pokemon Go by https://github.com/tejado.  
-It allows automatic parsing of requests/responses by finding the correct protobuf objects over a naming convention and will return the response in a parsed python dictionary format.   
 
- * This is unofficial - USE AT YOUR OWN RISK !
- * I don't play pokemon go !
- * No bot/farming code included !
 
 ## Supports
  * Python 2 and 3
@@ -26,7 +29,7 @@ It allows automatic parsing of requests/responses by finding the correct protobu
    * EVOLVE_POKEMON
    * ...
    * more should be possible now but have to be tested (PLEASE support here)
- 
+
 ## Usage
 
 ### pokecli
@@ -100,7 +103,7 @@ All (known) RPC calls against the original Pokemon Go servers are listed in the 
     ...
     api.get_player()
     api.call()
-    
+
 The pgoapi will send this as a RPC request and tries to parse the response over a protobuf object with the same name (get_player) converted to CamelCase + 'Response'. In our example, it would be 'GetPlayerResponse'. These protobuf definitions have to be inside RpcSub (pgoapi/protos/RpcSub.proto).
 
 If a request needs parameters, they can be added as arguments and pgoapi will try to add them automatically to the request, e.g.:
@@ -109,14 +112,14 @@ If a request needs parameters, they can be added as arguments and pgoapi will tr
     message DownloadSettingsRequest {
       optional string hash = 1;
     }
-    
+
     *python:*
     api = PGoApi()
     ...
     api.download_settings(hash="4a2e9bc330dae60e7b74fc85b98868ab4700802e")
     api.call()
 
-    
+
 ## Requirements
  * Python 2 or 3
  * requests
@@ -124,8 +127,8 @@ If a request needs parameters, they can be added as arguments and pgoapi will tr
  * gpsoauth
  * geopy (only for pokecli demo)
  * s2sphere (only for pokecli demo)
- 
-    
+
+
 ## Credits
 [Mila432](https://github.com/Mila432/Pokemon_Go_API) for the login secrets  
 [elliottcarlson](https://github.com/elliottcarlson) for the Google Auth PR  
