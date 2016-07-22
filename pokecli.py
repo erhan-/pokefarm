@@ -198,5 +198,6 @@ def main():
     # alternative:
     # api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
 
+
 if __name__ == '__main__':
     main()
