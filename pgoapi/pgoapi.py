@@ -473,7 +473,7 @@ class PGoApi:
                 self.spin_near_fort()
                 if not NO_BALLS:
                     while self.catch_near_pokemon():
-                    sleep(4)
+                        sleep(4)
             except Exception as e:
                 self.log.error("Error in main loop: %s", e)
                 sleep(60)
