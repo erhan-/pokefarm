@@ -53,14 +53,16 @@ from POGOProtos.Networking.Requests.RequestType_pb2 import RequestType
 logger = logging.getLogger(__name__)
 
 
+from traceback import print_exception
+
 # Global variables
 
-CP_CUTOFF = 0 # release anything under this if we don't have it already
-#BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
+#CP_CUTOFF = 0 # release anything under this if we don't have it already
+##BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
 BAD_ITEM_IDS = [101,102,103,104,201,202,701,702,703,704,705] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
-
-inventory_balls = [0, 0, 0]
-NO_BALLS = True
+#
+#inventory_balls = [0, 0, 0]
+#NO_BALLS = True
 
 
 class PGoApi:
@@ -80,6 +82,41 @@ class PGoApi:
         self._posf = (0,0,0) # this is floats
 
         self._req_method_list = []
+
+        self._cp_cutoff = 0 # release anything under this if we don't have it already
+
+        # keep them global for now (will only be read?)
+        #self._bad_item_ids = [101,102,103,104,201,202,701,702,703,704,705] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
+
+        self._inventory_balls = [0, 0, 0]
+        self._no_balls = True
+
+
+    # getter and setter functions (we can add debug code and checks in the getter/setter functions)
+    def set_cp_cutoff(self, cp):
+        self._cp_cutoff = cp
+
+    def get_cp_cutoff(self):
+        return self._cp_cutoff
+
+
+    def set_inventory_balls(self, item_id, count):
+        self._no_balls = True
+        for count in self._inventory_balls:
+            if count > 0:
+                # if we have balls left (don't care which one) set
+                self._no_balls = False
+        self._inventory_balls[item_id-1] = count
+
+    def get_inventory_balls(self, item_id):
+        return self._inventory_balls[item_id-1]
+
+    def get_inventory_balls(self):
+        return self._inventory_balls
+
+
+    def no_balls(self):
+        return self._no_balls
 
 
 
@@ -155,8 +192,6 @@ class PGoApi:
 
 
     def heartbeat(self):
-        global inventory_balls
-        global NO_BALLS
         # making a standard call, like it is also done by the client
         self.get_player()
         self.get_hatched_eggs()
@@ -166,7 +201,6 @@ class PGoApi:
         res = self.call()
         #print('Response dictionary: \n\r{}'.format(json.dumps(res, indent=2)))
         if res and ('GET_INVENTORY' in res['responses']):
-            NO_BALLS = True
             self.cleanup_inventory(res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items'])
             #print('Response dictionary: \n\r{}'.format(json.dumps(res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items'], indent=2)))
             for item in res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items']:
@@ -175,13 +209,12 @@ class PGoApi:
                     self.log.info("Level: %d, Experience: %d, KM walked: %f, Pokedex: %d", stats.get('level', 0), stats.get('experience', 0), stats.get('km_walked', 0), stats.get('unique_pokedex_entries',0))
                 if 'item' in item['inventory_item_data']:
                     if ('count' in item['inventory_item_data']['item']) and ('item_id' in item['inventory_item_data']['item']):
-                        id = item['inventory_item_data']['item']['item_id']
+                        item_id = item['inventory_item_data']['item']['item_id']
                         # 1 Pokeball, 2 Superball, 3 Ultraball
-                        if id < 4 and id > 0 :
-                            inventory_balls[id-1] = item['inventory_item_data']['item'].get('count', 0)
-                            if item['inventory_item_data']['item'].get('count', 0) > 0:
-                                NO_BALLS = False
-            if NO_BALLS:
+                        if item_id < 4 and item_id > 0 :
+                            self.set_inventory_balls(item_id-1, item['inventory_item_data']['item'].get('count', 0))
+
+            if self.no_balls():
                 self.log.error("No Balls left! Searching forts ...")
         return res
 
@@ -202,7 +235,6 @@ class PGoApi:
                     sleep(1)
 
     def spin_near_fort(self):
-        global NO_BALLS
         try:
             map_cells = self.nearby_map_objects()['responses']['GET_MAP_OBJECTS']['map_cells']
             forts = sum([cell.get('forts',[]) for cell in map_cells],[]) #supper ghetto lol
@@ -216,7 +248,7 @@ class PGoApi:
             position = self._posf # FIXME ?
             res = self.fort_search(fort_id = fort['id'], fort_latitude=fort['latitude'],fort_longitude=fort['longitude'],player_latitude=position[0],player_longitude=position[1]).call()['responses']['FORT_SEARCH']
             self.log.info("Fort spinned: %s", res)
-            if 'lure_info' in fort and not NO_BALLS:
+            if 'lure_info' in fort and not self.no_balls():
                 self.disk_encounter_pokemon(fort['lure_info'])
             return True
         else:
@@ -225,9 +257,8 @@ class PGoApi:
 
 
     def disk_encounter_pokemon(self, lureinfo):
-        global CP_CUTOFF
-        global NO_BALLS
-        if 'encounter_id' in lureinfo and not NO_BALLS:
+        
+        if 'encounter_id' in lureinfo and not self.no_balls():
             encounter_id = lureinfo['encounter_id']
             fort_id = lureinfo['fort_id']
             position = self._posf
@@ -238,7 +269,7 @@ class PGoApi:
         if resp['result'] == 1:
             self.log.info("Started Disk Encounter, Pokemon ID: %s", resp['pokemon_data']['pokemon_id'])
             capture_status = -1
-            cp = resp['pokemon_data'].get('cp', CP_CUTOFF)
+            cp = resp['pokemon_data'].get('cp',self.get_cp_cutoff())
             id = resp['pokemon_data'].get('pokemon_id', 0)
             iva = resp['pokemon_data'].get('individual_attack', 0)
             ivd = resp['pokemon_data'].get('individual_defense', 0)
@@ -265,7 +296,6 @@ class PGoApi:
             return False
 
     def catch_near_pokemon(self):
-        global NO_BALLS
         try:
             map_cells = self.nearby_map_objects()['responses']['GET_MAP_OBJECTS']['map_cells']
             pokemons = sum([cell.get('catchable_pokemons',[]) for cell in map_cells],[]) #supper ghetto lol
@@ -276,7 +306,7 @@ class PGoApi:
         origin = (self._posf[0],self._posf[1])
         pokemon_distances = [(pokemon, distance_in_meters(origin,(pokemon['latitude'], pokemon['longitude']))) for pokemon in pokemons]
         #self.log.info("Nearby pokemon: : %s", pokemon_distances)
-        if pokemons and not NO_BALLS:
+        if pokemons and not self.no_balls():
             target = pokemon_distances[0]
             self.log.info("Catching pokemon: : %s, distance: %f meters", target[0], target[1])
             return self.encounter_pokemon(target[0])
@@ -289,27 +319,27 @@ class PGoApi:
 
     def attempt_catch(self, encounter_id, spawn_point_id, cp, iv, cap_prob):
         # Catch depending on ball amount, cp, iv and cap_prob
-        global CP_CUTOFF
+        
         pokeball = 1
 
 
         # Throw normal ball if we don't care but also check if we even have one, get the worst ball
-        for ball_nr, ball_amount in enumerate(inventory_balls, start=1):
+        for ball_nr, ball_amount in enumerate(self.get_inventory_balls(), start=1):
             if ball_amount > 0:
                 pokeball = ball_nr
                 break
 
         # If it is a good pokemon then we reaaally want it!
-        if ((cp > CP_CUTOFF) or (iv > 80)) and inventory_balls[2] > 0:
+        if ((cp > self.get_cp_cutoff()) or (iv > 80)) and self.get_inventory_balls(item_id=3) > 0:
             pokeball = 3
         else:
-            for ball_nr, ball_amount in enumerate(inventory_balls, start=1):
+            for ball_nr, ball_amount in enumerate(self.get_inventory_balls(), start=1):
                 # Check if we have enough balls and if the probability is acceptable
                 if ball_amount > 0 and cap_prob[ball_nr-1] > 0.5:
                     pokeball = ball_nr
                     break
 
-        inventory_balls[pokeball-1] = inventory_balls[pokeball-1]-1
+        self.set_inventory_balls(pokeball, self.get_inventory_balls(pokeball)-1)
         # CATCH_SUCCESS = 1; CATCH_ESCAPE = 2;
         status = 2
         self.log.info("Will use Ball %d for CP: %d, IV: %f and Probability: %f", pokeball, cp, iv, cap_prob[pokeball-1])
@@ -342,7 +372,7 @@ class PGoApi:
 
 
     def cleanup_inventory(self, inventory_items=None):
-        global CP_CUTOFF
+        
         # This function removes duplicate pokemons and items that we don't need.
 
         if not inventory_items:
@@ -374,7 +404,7 @@ class PGoApi:
                     ivd = pokemon.get('individual_defense', 0)
                     ivs = pokemon.get('individual_stamina', 0)
                     iv = ((iva+ivd+ivs)/45.0)*100
-                    if 'cp' in pokemon and pokemon['cp'] < CP_CUTOFF and iv < 80:
+                    if 'cp' in pokemon and pokemon['cp'] < self.get_cp_cutoff() and iv < 80:
                         self.log.info("Releasing Pokemon %d with CP: %d and IV: %f", pokemon["pokemon_id"], pokemon["cp"], iv)
                         self.release_pokemon(pokemon_id = pokemon["id"])
 
@@ -382,9 +412,8 @@ class PGoApi:
 
 
     def encounter_pokemon(self, pokemon): #take in a MapPokemon from MapCell.catchable_pokemons
-        global CP_CUTOFF
-        global NO_BALLS
-        if not NO_BALLS:
+        
+        if not self.no_balls():
             return False
         encounter_id = pokemon['encounter_id']
         spawn_point_id = pokemon['spawn_point_id']
@@ -394,7 +423,7 @@ class PGoApi:
 
         if resp['status'] == 1:
             capture_status = -1
-            cp = resp['wild_pokemon']['pokemon_data'].get('cp', CP_CUTOFF)
+            cp = resp['wild_pokemon']['pokemon_data'].get('cp', self._get_cp_cutoff())
             id = resp['wild_pokemon']['pokemon_data'].get('pokemon_id', 0)
             iva = resp['wild_pokemon']['pokemon_data'].get('individual_attack', 0)
             ivd = resp['wild_pokemon']['pokemon_data'].get('individual_defense', 0)
@@ -421,15 +450,14 @@ class PGoApi:
                 sleep(2)
         elif resp['status'] == 7:
             self.log.error("Your Poke Inventory is too full! Encounter response status: %s", resp['status'])
-            CP_CUTOFF = CP_CUTOFF + 100
+            self.set_cp_cutoff(self.get_cp_cutoff() + 100)
         else:
             self.log.error("Error received in Encounter response status: %s", resp['status'])
             return False
 
 
     def login(self, provider, username, password, cp, cached=False):
-        global CP_CUTOFF
-        CP_CUTOFF = cp
+        self.set_cp_cutoff(cp)
         if not isinstance(username, basestring) or not isinstance(password, basestring):
             raise AuthException("Username/password not correctly specified")
 
@@ -479,17 +507,17 @@ class PGoApi:
 
 
     def main_loop(self):
-        global NO_BALLS
         self.heartbeat() # always heartbeat to start...
         while True:
             try:
                 self.heartbeat()
                 sleep(1)
                 self.spin_near_fort()
-                if not NO_BALLS:
+                if not self.no_balls():
                     while self.catch_near_pokemon():
                         sleep(4)
             except Exception as e:
                 self.log.error("Error in main loop: %s", e)
+                print_exception()
                 sleep(60)
                 pass
