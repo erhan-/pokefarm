@@ -104,6 +104,7 @@ def init_config():
     parser.add_argument("-c", "--cached", help="cached", action='store_true')
     parser.add_argument("-t", "--test", help="Only parse the specified location", action='store_true')
     parser.add_argument("-cp", "--cp", help="CP Cutoff", required=required("cp"))
+    parser.add_argument("--rest", help="start rest api server", action='store_true')
     parser.set_defaults(DEBUG=False, TEST=False,CACHED=False)
     config = parser.parse_args()
     load = load['accounts'][int(config.__dict__['config_index'])]
@@ -135,7 +136,7 @@ def main():
     config = init_config()
     if not config:
         return
-
+    
     if config.debug:
         logging.getLogger("requests").setLevel(logging.DEBUG)
         logging.getLogger("pgoapi").setLevel(logging.DEBUG)
@@ -193,6 +194,12 @@ def main():
     # execute the RPC call
     response_dict = api.call()
     #print('Response dictionary: \n\r{}'.format(pprint.PrettyPrinter(indent=4).pformat(response_dict)))
+   
+    if config.rest:
+        # start rest server thread
+        import rest_server 
+
+
     while True:
         api.main_loop()
     # alternative:
