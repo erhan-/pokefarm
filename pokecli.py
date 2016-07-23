@@ -122,9 +122,14 @@ def init_config():
 
 
 def main():
+
+    config = init_config()
+    if not config:
+        return
+
     # log settings
     # log format
-    logging.basicConfig(filename="pokego.log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+    logging.basicConfig(filename="logs/"+config.username+".log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
     # log level for http request class
     logging.getLogger("requests").setLevel(logging.WARNING)
     # log level for main pgoapi class
@@ -133,10 +138,8 @@ def main():
     logging.getLogger("rpc_api").setLevel(logging.INFO)
 
 
-    config = init_config()
-    if not config:
-        return
-    
+
+
     if config.debug:
         logging.getLogger("requests").setLevel(logging.DEBUG)
         logging.getLogger("pgoapi").setLevel(logging.DEBUG)
@@ -194,13 +197,13 @@ def main():
     # execute the RPC call
     response_dict = api.call()
     #print('Response dictionary: \n\r{}'.format(pprint.PrettyPrinter(indent=4).pformat(response_dict)))
-   
+
     if config.rest:
         # start rest server thread
         import rest_server as rest
         import thread
         rest.api = api
-        thread.start_new_thread(lambda: rest.app.run(), ())
+        thread.start_new_thread(lambda: rest.app.run(port=5000+int(config.config_index)), ())
         log.info("REST Server has been started")
 
 
