@@ -197,7 +197,11 @@ def main():
    
     if config.rest:
         # start rest server thread
-        import rest_server 
+        import rest_server as rest
+        import thread
+        rest.api = api
+        thread.start_new_thread(lambda: rest.app.run(), ())
+        log.info("REST Server has been started")
 
 
     while True:
