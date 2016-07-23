@@ -178,6 +178,9 @@ class PGoApi:
                             inventory_balls[id-1] = item['inventory_item_data']['item'].get('count', 0)
                             if item['inventory_item_data']['item'].get('count', 0) > 0:
                                 NO_BALLS = False
+                        if NO_BALLS:
+                            self.log.error("No Balls left! Searching forts ...")
+
         return res
 
 
