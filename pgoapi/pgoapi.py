@@ -108,7 +108,7 @@ class PGoApi:
                 self._no_balls = False
                 break
         self._inventory_balls[item_id-1] = count
-        self.log.info("ERROR: id=%d count=%d"%(item_id, count) + repr(self._inventory_balls))
+        #self.log.info("DDDDD: id=%d count=%d"%(item_id, count) + repr(self._inventory_balls))
 
     def dec_inventory_balls(self, item_id, num_to_sub):
         self.set_inventory_balls(item_id, self.get_inventory_balls(item_id)-num_to_sub)
@@ -276,7 +276,7 @@ class PGoApi:
             self.log.info("Started Disk Encounter, Pokemon ID: %s", resp['pokemon_data']['pokemon_id'])
             capture_status = -1
             cp = resp['pokemon_data'].get('cp',self.get_cp_cutoff())
-            id = resp['pokemon_data'].get('pokemon_id', 0)
+            poke_id = resp['pokemon_data'].get('pokemon_id', 0)
             iva = resp['pokemon_data'].get('individual_attack', 0)
             ivd = resp['pokemon_data'].get('individual_defense', 0)
             ivs = resp['pokemon_data'].get('individual_stamina', 0)
@@ -433,7 +433,7 @@ class PGoApi:
         if resp['status'] == 1:
             capture_status = -1
             cp = resp['wild_pokemon']['pokemon_data'].get('cp', self._get_cp_cutoff())
-            id = resp['wild_pokemon']['pokemon_data'].get('pokemon_id', 0)
+            poke_id = resp['wild_pokemon']['pokemon_data'].get('pokemon_id', 0)
             iva = resp['wild_pokemon']['pokemon_data'].get('individual_attack', 0)
             ivd = resp['wild_pokemon']['pokemon_data'].get('individual_defense', 0)
             ivs = resp['wild_pokemon']['pokemon_data'].get('individual_stamina', 0)
