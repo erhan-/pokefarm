@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 CP_CUTOFF = 0 # release anything under this if we don't have it already
 #BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
-BAD_ITEM_IDS = [101,102,701,702,703,201] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
+BAD_ITEM_IDS = [101,102,103,104,201,202,701,702,703,704,705] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
 
 inventory_balls = [0, 0, 0]
 NO_BALLS = True
@@ -327,7 +327,8 @@ class PGoApi:
                     # Else set the status so that it goes on when 2 or quits if something else
                     status = resp['status']
             else:
-                self.log.error("No status in Catch response: %s:", resp)
+                self.log.error("No status in Catch response. Poke inventory full? Increasing MAX_CP: %s:", resp)
+                MAX_CP = MAX_CP + 100
                 return resp
             self.log.info("Pokemon escaped from ball. Retrying throw ...")
             sleep(1)
