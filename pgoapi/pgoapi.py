@@ -53,7 +53,7 @@ from POGOProtos.Networking.Requests.RequestType_pb2 import RequestType
 logger = logging.getLogger(__name__)
 
 
-from traceback import print_exception
+from traceback import format_exc
 
 # Global variables
 
@@ -102,16 +102,21 @@ class PGoApi:
 
     def set_inventory_balls(self, item_id, count):
         self._no_balls = True
-        for count in self._inventory_balls:
-            if count > 0:
+        for c in self._inventory_balls:
+            if c > 0:
                 # if we have balls left (don't care which one) set
                 self._no_balls = False
+                break
         self._inventory_balls[item_id-1] = count
+        self.log.info("ERROR: id=%d count=%d"%(item_id, count) + repr(self._inventory_balls))
+
+    def dec_inventory_balls(self, item_id, num_to_sub):
+        self.set_inventory_balls(item_id, self.get_inventory_balls(item_id)-num_to_sub)
 
     def get_inventory_balls(self, item_id):
         return self._inventory_balls[item_id-1]
 
-    def get_inventory_balls(self):
+    def get_all_inventory_balls(self):
         return self._inventory_balls
 
 
@@ -210,9 +215,10 @@ class PGoApi:
                 if 'item' in item['inventory_item_data']:
                     if ('count' in item['inventory_item_data']['item']) and ('item_id' in item['inventory_item_data']['item']):
                         item_id = item['inventory_item_data']['item']['item_id']
+                        #print item['inventory_item_data']['item']
                         # 1 Pokeball, 2 Superball, 3 Ultraball
                         if item_id < 4 and item_id > 0 :
-                            self.set_inventory_balls(item_id-1, item['inventory_item_data']['item'].get('count', 0))
+                            self.set_inventory_balls(item_id, item['inventory_item_data']['item'].get('count', 0))
 
             if self.no_balls():
                 self.log.error("No Balls left! Searching forts ...")
@@ -280,6 +286,9 @@ class PGoApi:
             # while capture_status != RpcEnum.CATCH_ERROR and capture_status != RpcEnum.CATCH_FLEE:
             while capture_status != 0 and capture_status != 3:
                 catch_attempt = self.attempt_catch(encounter_id, fort_id, cp,iv, cap_prob)
+                if not catch_attempt:
+                    sleep(2)
+                    return False
                 capture_status = catch_attempt['status']
                 # if status == RpcEnum.CATCH_SUCCESS:
                 if capture_status == 1:
@@ -324,22 +333,22 @@ class PGoApi:
 
 
         # Throw normal ball if we don't care but also check if we even have one, get the worst ball
-        for ball_nr, ball_amount in enumerate(self.get_inventory_balls(), start=1):
+        for ball_nr, ball_amount in enumerate(self.get_all_inventory_balls(), start=1):
             if ball_amount > 0:
                 pokeball = ball_nr
                 break
 
         # If it is a good pokemon then we reaaally want it!
-        if ((cp > self.get_cp_cutoff()) or (iv > 80)) and self.get_inventory_balls(item_id=3) > 0:
+        if ((cp > self.get_cp_cutoff()) or (iv > 80)) and self.get_inventory_balls(3) > 0:
             pokeball = 3
         else:
-            for ball_nr, ball_amount in enumerate(self.get_inventory_balls(), start=1):
+            for ball_nr, ball_amount in enumerate(self.get_all_inventory_balls(), start=1):
                 # Check if we have enough balls and if the probability is acceptable
                 if ball_amount > 0 and cap_prob[ball_nr-1] > 0.5:
                     pokeball = ball_nr
                     break
 
-        self.set_inventory_balls(pokeball, self.get_inventory_balls(pokeball)-1)
+        self.dec_inventory_balls(pokeball, 1)
         # CATCH_SUCCESS = 1; CATCH_ESCAPE = 2;
         status = 2
         self.log.info("Will use Ball %d for CP: %d, IV: %f and Probability: %f", pokeball, cp, iv, cap_prob[pokeball-1])
@@ -364,7 +373,7 @@ class PGoApi:
                     status = resp['status']
             else:
                 self.log.error("No status in Catch response: %s:", resp)
-                return resp
+                return False
             self.log.info("Pokemon escaped from ball. Retrying throw ...")
             sleep(1)
         return resp
@@ -438,6 +447,9 @@ class PGoApi:
             # check the cp of the pokemon and throw different ball or also berry
             while capture_status != 0 and capture_status != 3:
                 catch_attempt = self.attempt_catch(encounter_id, spawn_point_id, cp, iv, cap_prob)
+                if not catch_attempt:
+                    sleep(2)
+                    return False
                 status = catch_attempt['status']
                 # if status == RpcEnum.CATCH_SUCCESS:
                 if status == 1:
@@ -518,6 +530,6 @@ class PGoApi:
                         sleep(4)
             except Exception as e:
                 self.log.error("Error in main loop: %s", e)
-                print_exception()
+                print format_exc()
                 sleep(60)
                 pass
