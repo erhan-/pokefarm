@@ -208,7 +208,7 @@ class PGoApi:
                 self.disk_encounter_pokemon(fort['lure_info'])
             return True
         else:
-            self.log.error("No fort to walk to!")
+            self.log.info("No fort to walk to in near distance!")
             return False
 
 
@@ -246,6 +246,8 @@ class PGoApi:
                     self.log.info("Failed Catch: : %s", catch_attempt)
                     return False
                 sleep(2)
+        else:
+            self.log.error("Received Disk Encounter result: %s", resp['result'])
             return False
 
     def catch_near_pokemon(self):
@@ -313,8 +315,9 @@ class PGoApi:
                     # Else set the status so that it goes on when 2 or quits if something else
                     status = resp['status']
             else:
+                self.log.error("No status in Catch response: %s:", resp)
                 return resp
-            self.log.info("Pokemon escaped. Retrying ...")
+            self.log.info("Pokemon escaped from ball. Retrying throw ...")
             sleep(1)
         return resp
 
@@ -393,7 +396,9 @@ class PGoApi:
                     self.log.info("Failed Catch: : %s", catch_attempt)
                     return False
                 sleep(2)
-        return False
+        else:
+            self.log.error("Error received in Encounter response status: %s", resp['status'])
+            return False
 
 
     def login(self, provider, username, password, cp, cached=False):
@@ -426,7 +431,7 @@ class PGoApi:
             pickle.dump(response, f)
 
         if not response:
-            self.log.info('Login failed!')
+            self.log.error('Login failed!')
             return False
 
         if 'api_url' in response:
