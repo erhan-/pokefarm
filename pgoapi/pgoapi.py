@@ -282,7 +282,7 @@ class PGoApi:
             ivs = resp['pokemon_data'].get('individual_stamina', 0)
             cap_prob = resp.get('capture_probability').get('capture_probability')
             iv = ((iva+ivd+ivs)/45.0)*100
-            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", id, cp, iv, iva, ivd, ivs, cap_prob)
+            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", poke_id, cp, iv, iva, ivd, ivs, cap_prob)
             # while capture_status != RpcEnum.CATCH_ERROR and capture_status != RpcEnum.CATCH_FLEE:
             while capture_status != 0 and capture_status != 3:
                 catch_attempt = self.attempt_catch(encounter_id, fort_id, cp,iv, cap_prob)
@@ -439,7 +439,7 @@ class PGoApi:
             ivs = resp['wild_pokemon']['pokemon_data'].get('individual_stamina', 0)
             cap_prob = resp.get('capture_probability').get('capture_probability')
             iv = ((iva+ivd+ivs)/45.0)*100
-            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", id, cp, iv, iva, ivd, ivs, cap_prob)
+            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", poke_id, cp, iv, iva, ivd, ivs, cap_prob)
             #{'capture_probability': [0.41520917415618896, 0.5528010129928589, 0.6580196619033813], 'pokeball_type': [1, 2, 3]}}
 
 
@@ -528,6 +528,8 @@ class PGoApi:
                 if not self.no_balls():
                     while self.catch_near_pokemon():
                         sleep(4)
+                else:
+                    self.log.error("No Balls left: %s . Doing heartbeat. ",inventory_balls)
             except Exception as e:
                 self.log.error("Error in main loop: %s", e)
                 print format_exc()
