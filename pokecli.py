@@ -155,22 +155,22 @@ def main():
     # provide player position on the earth
     api.set_position(*position)
 
-    ###logged_in = False
-    ###while(logged_in == False):
-    ###    logged_in = api.login(config.auth_service, config.username, config.password, config.cp, config.cached)
-    ###    if not logged_in:
-    ###        log.error("Login failed. Servers down maybe? Retrying in 5 seconds ...")
-    ###        sleep(10)
+    logged_in = False
+    while(logged_in == False):
+        logged_in = api.login(config.auth_service, config.username, config.password, config.cp, config.cached)
+        if not logged_in:
+            log.error("Login failed. Servers down maybe? Retrying in 5 seconds ...")
+            sleep(10)
 
     # chain subrequests (methods) into one RPC call
 
     # get player profile call
     # ----------------------
-    ###api.get_player()
+    api.get_player()
 
     # get inventory call
     # ----------------------
-    ###api.get_inventory()
+    api.get_inventory()
 
     # get map objects call
     # repeated fields (e.g. cell_id and since_timestamp_ms in get_map_objects) can be provided over a list
@@ -206,9 +206,8 @@ def main():
         thread.start_new_thread(lambda: rest.app.run(port=5000+int(config.config_index)), ())
         log.info("REST Server has been started")
 
-    raw_input()
-    ###while True:
-    ###    api.main_loop()
+    while True:
+        api.main_loop()
     # alternative:
     # api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
 
