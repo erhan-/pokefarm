@@ -206,7 +206,6 @@ def main():
         thread.start_new_thread(lambda: rest.app.run(port=5000+int(config.config_index)), ())
         log.info("REST Server has been started")
 
-
     while True:
         api.main_loop()
     # alternative:
