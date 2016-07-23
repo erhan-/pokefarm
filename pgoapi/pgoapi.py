@@ -377,6 +377,7 @@ class PGoApi:
 
 
     def encounter_pokemon(self, pokemon): #take in a MapPokemon from MapCell.catchable_pokemons
+        global CP_CUTOFF
         encounter_id = pokemon['encounter_id']
         spawn_point_id = pokemon['spawn_point_id']
         # begin encounter_id
@@ -412,6 +413,7 @@ class PGoApi:
                 sleep(2)
         elif resp['status'] == 7:
             self.log.error("Your Poke Inventory is too full! Encounter response status: %s", resp['status'])
+            CP_CUTOFF = CP_CUTOFF + 100
         else:
             self.log.error("Error received in Encounter response status: %s", resp['status'])
             return False
