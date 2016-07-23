@@ -57,9 +57,11 @@ logger = logging.getLogger(__name__)
 
 CP_CUTOFF = 0 # release anything under this if we don't have it already
 #BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
-BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
+BAD_ITEM_IDS = [101,102,701,702,703,201] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
 
 inventory_balls = [0, 0, 0]
+NO_BALLS = True
+
 
 class PGoApi:
 
@@ -151,6 +153,7 @@ class PGoApi:
 
     def heartbeat(self):
         global inventory_balls
+        global NO_BALLS
         # making a standard call, like it is also done by the client
         self.get_player()
         self.get_hatched_eggs()
@@ -171,7 +174,10 @@ class PGoApi:
                         id = item['inventory_item_data']['item']['item_id']
                         # 1 Pokeball, 2 Superball, 3 Ultraball
                         if id < 4 and id > 0 :
+                            NO_BALLS = True
                             inventory_balls[id-1] = item['inventory_item_data']['item'].get('count', 0)
+                            if item['inventory_item_data']['item'].get('count', 0) > 0:
+                                NO_BALLS = False
         return res
 
 
@@ -399,6 +405,8 @@ class PGoApi:
                     self.log.info("Failed Catch: : %s", catch_attempt)
                     return False
                 sleep(2)
+        elif resp['status'] == 7:
+            self.log.error("Your Poke Inventory is too full! Encounter response status: %s", resp['status'])
         else:
             self.log.error("Error received in Encounter response status: %s", resp['status'])
             return False
@@ -456,16 +464,17 @@ class PGoApi:
 
 
     def main_loop(self):
+        global NO_BALLS
         self.heartbeat() # always heartbeat to start...
         while True:
-
             try:
                 self.heartbeat()
                 sleep(1)
                 self.spin_near_fort()
-                while self.catch_near_pokemon():
+                if not NO_BALLS:
+                    while self.catch_near_pokemon():
                     sleep(4)
-                    pass
+                        pass
             except Exception as e:
                 self.log.error("Error in main loop: %s", e)
                 sleep(60)
