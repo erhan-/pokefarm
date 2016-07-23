@@ -283,7 +283,7 @@ class PGoApi:
 
     def attempt_catch(self, encounter_id, spawn_point_id, cp, iv, cap_prob):
         # Catch depending on ball amount, cp, iv and cap_prob
-
+        global CP_CUTOFF
         pokeball = 1
 
 
