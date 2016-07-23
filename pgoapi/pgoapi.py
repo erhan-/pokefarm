@@ -328,8 +328,7 @@ class PGoApi:
                     # Else set the status so that it goes on when 2 or quits if something else
                     status = resp['status']
             else:
-                self.log.error("No status in Catch response. Poke inventory full? Increasing CP_CUTOFF: %s:", resp)
-                CP_CUTOFF = CP_CUTOFF + 100
+                self.log.error("No status in Catch response: %s:", resp)
                 return resp
             self.log.info("Pokemon escaped from ball. Retrying throw ...")
             sleep(1)
