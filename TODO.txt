@@ -1,3 +1,4 @@
 * master/slave state system
 * basic auth for rest server
 * fix account creator script
+* create inventory overview like: PokeBallNormal: 1000 , Lucky Eggs: 17, ...

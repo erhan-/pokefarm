@@ -81,6 +81,9 @@ class PGoApi:
 
         self._req_method_list = []
 
+
+
+
     def call(self):
         if not self._req_method_list:
             return False
