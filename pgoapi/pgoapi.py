@@ -222,6 +222,7 @@ class PGoApi:
 
 
     def disk_encounter_pokemon(self, lureinfo):
+        global CP_CUTOFF
         if 'encounter_id' in lureinfo:
             encounter_id = lureinfo['encounter_id']
             fort_id = lureinfo['fort_id']
@@ -337,6 +338,7 @@ class PGoApi:
 
 
     def cleanup_inventory(self, inventory_items=None):
+        global CP_CUTOFF
         # This function removes duplicate pokemons and items that we don't need.
 
         if not inventory_items:
