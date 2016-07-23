@@ -172,14 +172,13 @@ class PGoApi:
                     self.log.info("Level: %d, Experience: %d, KM walked: %f, Pokedex: %d", stats.get('level', 0), stats.get('experience', 0), stats.get('km_walked', 0), stats.get('unique_pokedex_entries',0))
                 if 'item' in item['inventory_item_data']:
                     if ('count' in item['inventory_item_data']['item']) and ('item_id' in item['inventory_item_data']['item']):
-                        id = item['inventory_item_data']['item']['item_id']
+                        item_id = item['inventory_item_data']['item']['item_id']
                         # 1 Pokeball, 2 Superball, 3 Ultraball
-                        if id < 4 and id > 0 :
-                            inventory_balls[id-1] = item['inventory_item_data']['item'].get('count', 0)
+                        if item_id < 4 and item_id > 0 :
+                            inventory_balls[item_id-1] = item['inventory_item_data']['item'].get('count', 0)
                             if item['inventory_item_data']['item'].get('count', 0) > 0:
                                 NO_BALLS = False
-            if NO_BALLS:
-                self.log.error("No Balls left! Searching forts ...")
+        self.log.info("No Balls?: %s, Ball amount: %s", NO_BALLS, inventory_balls)
         return res
 
 
@@ -199,7 +198,6 @@ class PGoApi:
                     sleep(1)
 
     def spin_near_fort(self):
-        global NO_BALLS
         try:
             map_cells = self.nearby_map_objects()['responses']['GET_MAP_OBJECTS']['map_cells']
             forts = sum([cell.get('forts',[]) for cell in map_cells],[]) #supper ghetto lol
@@ -213,7 +211,8 @@ class PGoApi:
             position = self._posf # FIXME ?
             res = self.fort_search(fort_id = fort['id'], fort_latitude=fort['latitude'],fort_longitude=fort['longitude'],player_latitude=position[0],player_longitude=position[1]).call()['responses']['FORT_SEARCH']
             self.log.info("Fort spinned: %s", res)
-            if 'lure_info' in fort and not NO_BALLS:
+            if 'lure_info' in fort:
+                print("doing disk encounter and have balls")
                 self.disk_encounter_pokemon(fort['lure_info'])
             return True
         else:
@@ -223,8 +222,7 @@ class PGoApi:
 
     def disk_encounter_pokemon(self, lureinfo):
         global CP_CUTOFF
-        global NO_BALLS
-        if 'encounter_id' in lureinfo and not NO_BALLS:
+        if 'encounter_id' in lureinfo:
             encounter_id = lureinfo['encounter_id']
             fort_id = lureinfo['fort_id']
             position = self._posf
@@ -236,13 +234,13 @@ class PGoApi:
             self.log.info("Started Disk Encounter, Pokemon ID: %s", resp['pokemon_data']['pokemon_id'])
             capture_status = -1
             cp = resp['pokemon_data'].get('cp', CP_CUTOFF)
-            id = resp['pokemon_data'].get('pokemon_id', 0)
+            poke_id = resp['pokemon_data'].get('pokemon_id', 0)
             iva = resp['pokemon_data'].get('individual_attack', 0)
             ivd = resp['pokemon_data'].get('individual_defense', 0)
             ivs = resp['pokemon_data'].get('individual_stamina', 0)
             cap_prob = resp.get('capture_probability').get('capture_probability')
             iv = ((iva+ivd+ivs)/45.0)*100
-            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", id, cp, iv, iva, ivd, ivs, cap_prob)
+            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", poke_id, cp, iv, iva, ivd, ivs, cap_prob)
             # while capture_status != RpcEnum.CATCH_ERROR and capture_status != RpcEnum.CATCH_FLEE:
             while capture_status != 0 and capture_status != 3:
                 catch_attempt = self.attempt_catch(encounter_id, fort_id, cp,iv, cap_prob)
@@ -262,7 +260,7 @@ class PGoApi:
             return False
 
     def catch_near_pokemon(self):
-        global NO_BALLS
+
         try:
             map_cells = self.nearby_map_objects()['responses']['GET_MAP_OBJECTS']['map_cells']
             pokemons = sum([cell.get('catchable_pokemons',[]) for cell in map_cells],[]) #supper ghetto lol
@@ -273,7 +271,7 @@ class PGoApi:
         origin = (self._posf[0],self._posf[1])
         pokemon_distances = [(pokemon, distance_in_meters(origin,(pokemon['latitude'], pokemon['longitude']))) for pokemon in pokemons]
         #self.log.info("Nearby pokemon: : %s", pokemon_distances)
-        if pokemons and not NO_BALLS:
+        if pokemons:
             target = pokemon_distances[0]
             self.log.info("Catching pokemon: : %s, distance: %f meters", target[0], target[1])
             return self.encounter_pokemon(target[0])
@@ -380,9 +378,7 @@ class PGoApi:
 
     def encounter_pokemon(self, pokemon): #take in a MapPokemon from MapCell.catchable_pokemons
         global CP_CUTOFF
-        global NO_BALLS
-        if not NO_BALLS:
-            return False
+
         encounter_id = pokemon['encounter_id']
         spawn_point_id = pokemon['spawn_point_id']
         # begin encounter_id
@@ -392,13 +388,13 @@ class PGoApi:
         if resp['status'] == 1:
             capture_status = -1
             cp = resp['wild_pokemon']['pokemon_data'].get('cp', CP_CUTOFF)
-            id = resp['wild_pokemon']['pokemon_data'].get('pokemon_id', 0)
+            poke_id = resp['wild_pokemon']['pokemon_data'].get('pokemon_id', 0)
             iva = resp['wild_pokemon']['pokemon_data'].get('individual_attack', 0)
             ivd = resp['wild_pokemon']['pokemon_data'].get('individual_defense', 0)
             ivs = resp['wild_pokemon']['pokemon_data'].get('individual_stamina', 0)
             cap_prob = resp.get('capture_probability').get('capture_probability')
             iv = ((iva+ivd+ivs)/45.0)*100
-            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", id, cp, iv, iva, ivd, ivs, cap_prob)
+            self.log.info("Started Encounter with %d (CP: %d) IV: %f (IVA: %d // IVD: %d // IVS: %d) || capture probability: %s", poke_id, cp, iv, iva, ivd, ivs, cap_prob)
             #{'capture_probability': [0.41520917415618896, 0.5528010129928589, 0.6580196619033813], 'pokeball_type': [1, 2, 3]}}
 
 
@@ -486,6 +482,8 @@ class PGoApi:
                 if not NO_BALLS:
                     while self.catch_near_pokemon():
                         sleep(4)
+                else:
+                    self.log.error("No Balls left: %s . Doing heartbeat. ",inventory_balls)
             except Exception as e:
                 self.log.error("Error in main loop: %s", e)
                 sleep(60)
