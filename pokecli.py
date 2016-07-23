@@ -104,6 +104,7 @@ def init_config():
     parser.add_argument("-c", "--cached", help="cached", action='store_true')
     parser.add_argument("-t", "--test", help="Only parse the specified location", action='store_true')
     parser.add_argument("-cp", "--cp", help="CP Cutoff", required=required("cp"))
+    parser.add_argument("--rest", help="start rest api server", action='store_true')
     parser.set_defaults(DEBUG=False, TEST=False,CACHED=False)
     config = parser.parse_args()
     load = load['accounts'][int(config.__dict__['config_index'])]
@@ -123,7 +124,7 @@ def init_config():
 def main():
     # log settings
     # log format
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+    logging.basicConfig(filename="pokego.log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
     # log level for http request class
     logging.getLogger("requests").setLevel(logging.WARNING)
     # log level for main pgoapi class
@@ -131,10 +132,11 @@ def main():
     # log level for internal pgoapi class
     logging.getLogger("rpc_api").setLevel(logging.INFO)
 
+
     config = init_config()
     if not config:
         return
-
+    
     if config.debug:
         logging.getLogger("requests").setLevel(logging.DEBUG)
         logging.getLogger("pgoapi").setLevel(logging.DEBUG)
@@ -192,10 +194,21 @@ def main():
     # execute the RPC call
     response_dict = api.call()
     #print('Response dictionary: \n\r{}'.format(pprint.PrettyPrinter(indent=4).pformat(response_dict)))
+   
+    if config.rest:
+        # start rest server thread
+        import rest_server as rest
+        import thread
+        rest.api = api
+        thread.start_new_thread(lambda: rest.app.run(), ())
+        log.info("REST Server has been started")
+
+
     while True:
         api.main_loop()
     # alternative:
     # api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
+
 
 if __name__ == '__main__':
     main()

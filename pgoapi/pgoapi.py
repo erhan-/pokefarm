@@ -368,6 +368,7 @@ class PGoApi:
         # begin encounter_id
         position = self._posf # FIXME ?
         resp = self.encounter(encounter_id=encounter_id,spawn_point_id=spawn_point_id,player_latitude=position[0],player_longitude=position[1]).call()['responses']['ENCOUNTER']
+
         if resp['status'] == 1:
             capture_status = -1
             cp = resp['wild_pokemon']['pokemon_data'].get('cp', CP_CUTOFF)
