@@ -24,5 +24,16 @@ def set_position():
     except:
         return jsonify({"status": "error"})
 
+#@app.route("/cleanup_inventory", methods=["GET"])
+#def cleanup_inventory():
+#    try:
+#        api.cleanup_inventory()
+#        return jsonify({"status": "ok"})
+#    except:
+#        return jsonify({"status": "error"})
+
 if __name__ == "__main__":
     app.run()
+
+
+

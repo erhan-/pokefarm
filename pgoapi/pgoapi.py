@@ -401,6 +401,7 @@ class PGoApi:
                 sleep(2)
         else:
             self.log.error("Error received in Encounter response status: %s", resp['status'])
+            print repr(resp)
             return False
 
 
