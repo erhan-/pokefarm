@@ -34,6 +34,11 @@ def get_pokemon_count():
             count += 1
     return jsonify({"count": count})
 
+@app.route("/ball_count", methods=["GET"])
+def get_ball_count():
+    pass
+
+
 @app.route("/login_account", methods=["POST"])
 def login_account():
     # data=auth_service=ptc&username=lalal&password=sicher&cp=100&cached=True
