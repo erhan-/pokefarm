@@ -275,6 +275,9 @@ class PGoApi:
     def attempt_catch(self, encounter_id, spawn_point_id, cp, iv, cap_prob):
         # Catch depending on ball amount, cp, iv and cap_prob
 
+        pokeball = 1
+
+
         # Throw normal ball if we don't care but also check if we even have one, get the worst ball
         for ball_nr, ball_amount in enumerate(inventory_balls, start=1):
             if ball_amount > 0:
