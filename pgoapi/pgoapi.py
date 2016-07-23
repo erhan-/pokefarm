@@ -223,7 +223,8 @@ class PGoApi:
 
     def disk_encounter_pokemon(self, lureinfo):
         global CP_CUTOFF
-        if 'encounter_id' in lureinfo:
+        global NO_BALLS
+        if 'encounter_id' in lureinfo and not NO_BALLS:
             encounter_id = lureinfo['encounter_id']
             fort_id = lureinfo['fort_id']
             position = self._posf
@@ -261,6 +262,7 @@ class PGoApi:
             return False
 
     def catch_near_pokemon(self):
+        global NO_BALLS
         try:
             map_cells = self.nearby_map_objects()['responses']['GET_MAP_OBJECTS']['map_cells']
             pokemons = sum([cell.get('catchable_pokemons',[]) for cell in map_cells],[]) #supper ghetto lol
@@ -271,7 +273,7 @@ class PGoApi:
         origin = (self._posf[0],self._posf[1])
         pokemon_distances = [(pokemon, distance_in_meters(origin,(pokemon['latitude'], pokemon['longitude']))) for pokemon in pokemons]
         #self.log.info("Nearby pokemon: : %s", pokemon_distances)
-        if pokemons:
+        if pokemons and not NO_BALLS:
             target = pokemon_distances[0]
             self.log.info("Catching pokemon: : %s, distance: %f meters", target[0], target[1])
             return self.encounter_pokemon(target[0])
@@ -378,6 +380,9 @@ class PGoApi:
 
     def encounter_pokemon(self, pokemon): #take in a MapPokemon from MapCell.catchable_pokemons
         global CP_CUTOFF
+        global NO_BALLS
+        if not NO_BALLS:
+            return False
         encounter_id = pokemon['encounter_id']
         spawn_point_id = pokemon['spawn_point_id']
         # begin encounter_id
