@@ -163,6 +163,7 @@ class PGoApi:
         res = self.call()
         #print('Response dictionary: \n\r{}'.format(json.dumps(res, indent=2)))
         if res and ('GET_INVENTORY' in res['responses']):
+            NO_BALLS = True
             self.cleanup_inventory(res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items'])
             #print('Response dictionary: \n\r{}'.format(json.dumps(res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items'], indent=2)))
             for item in res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items']:
@@ -174,13 +175,11 @@ class PGoApi:
                         id = item['inventory_item_data']['item']['item_id']
                         # 1 Pokeball, 2 Superball, 3 Ultraball
                         if id < 4 and id > 0 :
-                            NO_BALLS = True
                             inventory_balls[id-1] = item['inventory_item_data']['item'].get('count', 0)
                             if item['inventory_item_data']['item'].get('count', 0) > 0:
                                 NO_BALLS = False
-                        if NO_BALLS:
-                            self.log.error("No Balls left! Searching forts ...")
-
+            if NO_BALLS:
+                self.log.error("No Balls left! Searching forts ...")
         return res
 
 
