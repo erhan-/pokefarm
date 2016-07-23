@@ -199,6 +199,7 @@ class PGoApi:
                     sleep(1)
 
     def spin_near_fort(self):
+        global NO_BALLS
         try:
             map_cells = self.nearby_map_objects()['responses']['GET_MAP_OBJECTS']['map_cells']
             forts = sum([cell.get('forts',[]) for cell in map_cells],[]) #supper ghetto lol
@@ -212,7 +213,7 @@ class PGoApi:
             position = self._posf # FIXME ?
             res = self.fort_search(fort_id = fort['id'], fort_latitude=fort['latitude'],fort_longitude=fort['longitude'],player_latitude=position[0],player_longitude=position[1]).call()['responses']['FORT_SEARCH']
             self.log.info("Fort spinned: %s", res)
-            if 'lure_info' in fort:
+            if 'lure_info' in fort and not NO_BALLS:
                 self.disk_encounter_pokemon(fort['lure_info'])
             return True
         else:
