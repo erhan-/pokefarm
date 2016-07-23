@@ -57,9 +57,11 @@ logger = logging.getLogger(__name__)
 
 CP_CUTOFF = 0 # release anything under this if we don't have it already
 #BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
-BAD_ITEM_IDS = [101,102,701,702,703] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
+BAD_ITEM_IDS = [101,102,701,702,703,201] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
 
 inventory_balls = [0, 0, 0]
+NO_BALLS = True
+
 
 class PGoApi:
 
@@ -151,6 +153,7 @@ class PGoApi:
 
     def heartbeat(self):
         global inventory_balls
+        global NO_BALLS
         # making a standard call, like it is also done by the client
         self.get_player()
         self.get_hatched_eggs()
@@ -160,6 +163,7 @@ class PGoApi:
         res = self.call()
         #print('Response dictionary: \n\r{}'.format(json.dumps(res, indent=2)))
         if res and ('GET_INVENTORY' in res['responses']):
+            NO_BALLS = True
             self.cleanup_inventory(res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items'])
             #print('Response dictionary: \n\r{}'.format(json.dumps(res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items'], indent=2)))
             for item in res['responses']['GET_INVENTORY']['inventory_delta']['inventory_items']:
@@ -172,6 +176,10 @@ class PGoApi:
                         # 1 Pokeball, 2 Superball, 3 Ultraball
                         if id < 4 and id > 0 :
                             inventory_balls[id-1] = item['inventory_item_data']['item'].get('count', 0)
+                            if item['inventory_item_data']['item'].get('count', 0) > 0:
+                                NO_BALLS = False
+            if NO_BALLS:
+                self.log.error("No Balls left! Searching forts ...")
         return res
 
 
@@ -191,6 +199,7 @@ class PGoApi:
                     sleep(1)
 
     def spin_near_fort(self):
+        global NO_BALLS
         try:
             map_cells = self.nearby_map_objects()['responses']['GET_MAP_OBJECTS']['map_cells']
             forts = sum([cell.get('forts',[]) for cell in map_cells],[]) #supper ghetto lol
@@ -204,7 +213,7 @@ class PGoApi:
             position = self._posf # FIXME ?
             res = self.fort_search(fort_id = fort['id'], fort_latitude=fort['latitude'],fort_longitude=fort['longitude'],player_latitude=position[0],player_longitude=position[1]).call()['responses']['FORT_SEARCH']
             self.log.info("Fort spinned: %s", res)
-            if 'lure_info' in fort:
+            if 'lure_info' in fort and not NO_BALLS:
                 self.disk_encounter_pokemon(fort['lure_info'])
             return True
         else:
@@ -399,6 +408,8 @@ class PGoApi:
                     self.log.info("Failed Catch: : %s", catch_attempt)
                     return False
                 sleep(2)
+        elif resp['status'] == 7:
+            self.log.error("Your Poke Inventory is too full! Encounter response status: %s", resp['status'])
         else:
             self.log.error("Error received in Encounter response status: %s", resp['status'])
             print repr(resp)
@@ -457,16 +468,16 @@ class PGoApi:
 
 
     def main_loop(self):
+        global NO_BALLS
         self.heartbeat() # always heartbeat to start...
         while True:
-
             try:
                 self.heartbeat()
                 sleep(1)
                 self.spin_near_fort()
-                while self.catch_near_pokemon():
-                    sleep(4)
-                    pass
+                if not NO_BALLS:
+                    while self.catch_near_pokemon():
+                        sleep(4)
             except Exception as e:
                 self.log.error("Error in main loop: %s", e)
                 sleep(60)
