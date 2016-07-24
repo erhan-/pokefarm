@@ -2,18 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-#import requests
+import requests
 
-####################
-# install ghost.py:
-####################
-# pacman -S python2-pyside
-# pip install ghost.py
-
-from ghost import Ghost
 
 landing_page = 'https://club.pokemon.com/de/pokemon-trainer-club/anmelden/'
+eltern_anmelden = 'https://club.pokemon.com/de/pokemon-trainer-club/eltern/anmelden'
 proxy = {"https": "http://127.0.0.1:8080"} # burp
+headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36"}
 ssl_verify = False
 
 
@@ -25,91 +20,43 @@ class PTCAccountCreator:
         self.password = password
         self.email = email
         self.bday = bday
-        #self.req_session = requests.session()
-        self.ghost = Ghost()
-        self.session = self.ghost.start()
+        self.req_session = requests.session()
+        #self.ghost = Ghost()
+        #self.session = self.ghost.start()
         # cookies and csrf_token will be set with init_session
         self.init_session()
 
     def init_session(self):
-        r = self.session.open(landing_page, proxies=proxy, verify=ssl_verify)
-
-        self.cookies = r.cookies
-        # this token will also be set in a hidden field, think we can ignore that
-        self.csrf_token = self.cookies['csrftoken'] 
+        r = self.req_session.get(landing_page, headers=headers, proxies=proxy, verify=ssl_verify)
+        self.csrf_token = self.req_session.cookies['csrftoken'] 
 
     def post_birthday(self):
-        #data = {
-        #        "csrfmiddlewaretoken": self.csrf_token,
-        #        "dob": self.bday,
-        #        "undefined": 6,
-        #        "undefined": self.bday.split(".")[-1],
-        #        "country": "DE",
-        #        "country": "DE"
-        #        }
         data = "csrfmiddlewaretoken=%s&dob=%s&undefined=6&undefined=%s&country=DE&country=DE"%(
                 self.csrf_token, self.bday, self.bday.split(".")[-1])
-        r = self.req_session.post(landing_page, data, proxies=proxy, verify=ssl_verify)
+        print self.req_session.cookies
+        headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        headers['Referer'] = landing_page
+        r = None
+        try:
+            r = self.req_session.post(landing_page, data, headers=headers, proxies=proxy, verify=ssl_verify)
+        except:
+            print "errrror in post_birthday"
 
+    def post_account(self):
+        data = "csrfmiddlewaretoken=%s&username=%s&password=%s&confirm_password=%s&email=%s&confirm_email=%s&public_profile_opt_in=True&screen_name=%s&terms=on"%(
+                self.csrf_token, self.username, self.password, self.password, self.email, self.email, self.username)
+         
+        try:
+            r = self.req_session.post(eltern_anmelden, data, headers=headers, proxies=proxy, verify=ssl_verify)
+        except:
+            print "error in post_account"
 
 
 ptc_creator = PTCAccountCreator("m3ta003", "asdfasdfasdf", "m3ta003@gmx.de", "19.07.1977")
 ptc_creator.post_birthday()
+ptc_creator.post_account()
 
 
-
-#csrfmiddlewaretoken = ""
-#day = "05"
-#month = "11"
-#year = "1984"
-#undef1 = "10"
-#undef2
-#
-#data = {
-#    'csrfmiddlewaretoken':csrf_token,
-#    'username': username,
-#    'password': password,
-#    'confirm_password': password,
-#    'email': email,
-#    'confirm_email': email,
-#    'public_profile_opt_in': 'False',
-#    'screen_name': '',
-#    'terms': 'on',
-#    }
-#
-#register = requests.post('https://club.pokemon.com/de/pokemon-trainer-club/eltern/anmelden', data)
-#
-#csrfmiddlewaretoken=ghJ7Y4R221CvX8LzjTDxIBmRbP6aHOkl&dob=17.07.2004&undefined=6&undefined=2004&country=US&country=US
-#
-#csrfmiddlewaretoken=JkLFxVEGb5do6PFGJczPbyFWOeh6Nnb2&dob=05.11.1984&undefined=10&undefined=1984&country=US&country=US
-#
-#
-##root = etree.fromstring(r.text.decode('utf8'))
-#print(r.text)
-##print(root.xpath("//input[@name='csrfmiddlewaretoken']/text()"))
-## inputs = root.find("input")
-## input_list = inputs.findall("input[@name='csrfmiddlewaretoken']/content")
-## for a in input_list_list:
-##     print a.text
-#
-## username = ""
-## password = ""
-## email = ""
-##
-##
-## data = {
-##     'csrfmiddlewaretoken':csrf_token,
-##     'username': username,
-##     'password': password,
-##     'confirm_password': password,
-##     'email': email,
-##     'confirm_email': email,
-##     'public_profile_opt_in': 'False',
-##     'screen_name': '',
-##     'terms': 'on',
-##     }
-##
-## register = requests.post('https://club.pokemon.com/de/pokemon-trainer-club/eltern/anmelden', data)
 
 ### Example ###
 """
@@ -122,7 +69,15 @@ Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0
 Referer: https://sso.pokemon.com/sso/login?locale=de&service=https://club.pokemon.com/de/pokemon-trainer-club/caslogin
 Accept-Encoding: gzip, deflate, sdch, br
 Accept-Language: en-US,en;q=0.8,de;q=0.6,fr;q=0.4
-Cookie: django_language=de; s_ppvl=%5B%5BB%5D%5D; s_vnum=1500896475720%26vn%3D1; s_cc=true; _gat_UA-625471-2=1; s_sq=pcomprod%252Ctpciglobalprod%3D%2526pid%253DHomepage%2526pidt%253D1%2526oid%253Dhttps%25253A%25252F%25252Fclub.pokemon.com%25252Fde%25252Fpokemon-trainer-club%25252Flogin%2526ot%253DA; s_fid=0FA986871BB1A350-26BF472A739C3DCB; eVar40=3; s_ppn=Homepage; s_invisit=true; s_nr=1469360506523-New; gpv_pn=Homepage; ebpdghrqhiowzrfafjht=637078005; s_ppv=Homepage%2C27%2C25%2C873%2C950%2C873%2C1920%2C1039%2C1%2CL; _ga=GA1.2.775913039.1469360478
+Cookie: django_language=de; s_ppvl=%5B%5BB%5D%5D; s_vnum=1500896475720%26vn%3D1; s_cc=true; _gat_UA-625471-2=1; s_sq=pcomprod%252Ctpciglobalprod%3D%2526pid%253DHomepage%2526pidt%253D1%2526oid%253Dhttps%25253A%25252F%25252Fclub.pokemon.com%25252Fde%25252Fpokemon-trainer-club%25252Flogin%2526ot%253DA;
+s_fid=0FA986871BB1A350-26BF472A739C3DCB;
+eVar40=3; s_ppn=Homepage; 
+s_invisit=true; 
+s_nr=1469360506523-New; 
+gpv_pn=Homepage; 
+ebpdghrqhiowzrfafjht=637078005; 
+s_ppv=Homepage%2C27%2C25%2C873%2C950%2C873%2C1920%2C1039%2C1%2CL;
+_ga=GA1.2.775913039.1469360478
 
 
 HTTP/1.1 200 OK
