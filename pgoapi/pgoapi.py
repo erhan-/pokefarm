@@ -427,7 +427,7 @@ class PGoApi:
 
     def encounter_pokemon(self, pokemon): #take in a MapPokemon from MapCell.catchable_pokemons
 
-        if not self.no_balls():
+        if self.no_balls():
             self.log.error("No balls left. No need to encounter: %s", self.no_balls())
             return False
         encounter_id = pokemon['encounter_id']
