@@ -344,7 +344,7 @@ class PGoApi:
                 break
 
         # If it is a good pokemon then we reaaally want it!
-        if ((cp > self.get_cp_cutoff()) or (iv > 80)) and self.get_inventory_balls(3) > 0:
+        if ((cp > self.get_cp_cutoff()) or (iv > 85)) and self.get_inventory_balls(3) > 0:
             pokeball = 3
         else:
             for ball_nr, ball_amount in enumerate(self.get_all_inventory_balls(), start=1):
@@ -418,7 +418,7 @@ class PGoApi:
                     ivd = pokemon.get('individual_defense', 0)
                     ivs = pokemon.get('individual_stamina', 0)
                     iv = ((iva+ivd+ivs)/45.0)*100
-                    if 'cp' in pokemon and pokemon['cp'] < self.get_cp_cutoff() and iv < 80:
+                    if 'cp' in pokemon and pokemon['cp'] < self.get_cp_cutoff() and iv < 85:
                         self.log.info("Releasing Pokemon %d with CP: %d and IV: %f", pokemon["pokemon_id"], pokemon["cp"], iv)
                         self.release_pokemon(pokemon_id = pokemon["id"])
 
