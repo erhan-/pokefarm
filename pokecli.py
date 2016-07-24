@@ -129,7 +129,7 @@ def main():
 
     # log settings
     # log format
-    logging.basicConfig(filename="logs/"+config.username+".log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+    logging.basicConfig(filename="logs/"+str(config.config_index)+"-"+config.username+".log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
     # log level for http request class
     logging.getLogger("requests").setLevel(logging.WARNING)
     # log level for main pgoapi class

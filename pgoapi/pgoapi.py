@@ -263,7 +263,7 @@ class PGoApi:
 
 
     def disk_encounter_pokemon(self, lureinfo):
-        
+
         if 'encounter_id' in lureinfo and not self.no_balls():
             encounter_id = lureinfo['encounter_id']
             fort_id = lureinfo['fort_id']
@@ -300,6 +300,11 @@ class PGoApi:
                     self.log.info("Failed Catch: : %s", catch_attempt)
                     return False
                 sleep(2)
+        #	POKEMON_INVENTORY_FULL = 5;
+        elif resp['result'] == 5:
+            self.log.error("Your Poke Inventory is full, increasing cp cutoff")
+            self.set_cp_cutoff(self.get_cp_cutoff() + 100)
+            return False
         else:
             self.log.error("Received Disk Encounter result: %s", resp['result'])
             return False
@@ -328,7 +333,7 @@ class PGoApi:
 
     def attempt_catch(self, encounter_id, spawn_point_id, cp, iv, cap_prob):
         # Catch depending on ball amount, cp, iv and cap_prob
-        
+
         pokeball = 1
 
 
@@ -381,7 +386,7 @@ class PGoApi:
 
 
     def cleanup_inventory(self, inventory_items=None):
-        
+
         # This function removes duplicate pokemons and items that we don't need.
 
         if not inventory_items:
@@ -421,7 +426,7 @@ class PGoApi:
 
 
     def encounter_pokemon(self, pokemon): #take in a MapPokemon from MapCell.catchable_pokemons
-        
+
         if not self.no_balls():
             return False
         encounter_id = pokemon['encounter_id']
@@ -529,7 +534,7 @@ class PGoApi:
                     while self.catch_near_pokemon():
                         sleep(4)
                 else:
-                    self.log.error("No Balls left: %s . Doing heartbeat. ",inventory_balls)
+                    self.log.error("No Balls left: %s . Doing heartbeat. ",self.get_all_inventory_balls())
             except Exception as e:
                 self.log.error("Error in main loop: %s", e)
                 print format_exc()
