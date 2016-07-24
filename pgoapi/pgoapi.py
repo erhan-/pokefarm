@@ -266,7 +266,9 @@ class PGoApi:
             self.log.info("Walking to fort: %s", fort)
             self.walk_to((fort['latitude'], fort['longitude']))
             position = self._posf # FIXME ?
-            res = self.fort_search(fort_id = fort['id'], fort_latitude=fort['latitude'],fort_longitude=fort['longitude'],player_latitude=position[0],player_longitude=position[1]).call()['responses']['FORT_SEARCH']
+            res = self.fort_search(fort_id = fort['id'], fort_latitude=fort['latitude'],fort_longitude=fort['longitude'],player_latitude=position[0],player_longitude=position[1]).call()
+            if 'FORT_SEARCH' not in res['responses']:
+                return False
             self.log.info("Fort spinned: %s", res)
             if 'lure_info' in fort and not self.no_balls():
                 self.disk_encounter_pokemon(fort['lure_info'])
@@ -282,7 +284,9 @@ class PGoApi:
             encounter_id = lureinfo['encounter_id']
             fort_id = lureinfo['fort_id']
             position = self._posf
-            resp = self.disk_encounter(encounter_id=encounter_id, fort_id=fort_id, player_latitude=position[0], player_longitude=position[1]).call()['responses']['DISK_ENCOUNTER']
+            resp = self.disk_encounter(encounter_id=encounter_id, fort_id=fort_id, player_latitude=position[0], player_longitude=position[1]).call()
+            if 'DISK_ENCOUNTER' not in resp['responses']:
+                return False
         else:
             self.log.error("encounter_id not in lure_info: %s", lureinfo)
             return False
