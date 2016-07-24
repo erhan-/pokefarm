@@ -303,7 +303,7 @@ class PGoApi:
         #	POKEMON_INVENTORY_FULL = 5;
         elif resp['result'] == 5:
             self.log.error("Your Poke Inventory is full, increasing cp cutoff")
-            self.set_cp_cutoff(self.get_cp_cutoff() + 100)
+            self.set_cp_cutoff(self.get_cp_cutoff() + 300)
             return False
         else:
             self.log.error("Received Disk Encounter result: %s", resp['result'])
@@ -467,7 +467,7 @@ class PGoApi:
                 sleep(2)
         elif resp['status'] == 7:
             self.log.error("Your Poke Inventory is too full! Encounter response status: %s", resp['status'])
-            self.set_cp_cutoff(self.get_cp_cutoff() + 100)
+            self.set_cp_cutoff(self.get_cp_cutoff() + 300)
         else:
             self.log.error("Error received in Encounter response status: %s", resp['status'])
             return False
