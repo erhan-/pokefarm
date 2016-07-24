@@ -52,7 +52,7 @@ from POGOProtos.Networking.Requests.RequestType_pb2 import RequestType
 
 logger = logging.getLogger(__name__)
 
-
+import datetime
 from traceback import format_exc
 
 # Global variables
@@ -85,6 +85,7 @@ class PGoApi:
 
         self._cp_cutoff = 0 # release anything under this if we don't have it already
 
+        self._logintime = datetime.datetime.now()
         # keep them global for now (will only be read?)
         #self._bad_item_ids = [101,102,103,104,201,202,701,702,703,704,705] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
 
@@ -99,6 +100,19 @@ class PGoApi:
     def get_cp_cutoff(self):
         return self._cp_cutoff
 
+
+    # getter and setter functions (we can add debug code and checks in the getter/setter functions)
+    def set_logintime(self):
+        self._logintime = datetime.datetime.now()
+
+    def get_logintime(self):
+        return self._logintime
+
+    def refresh_login(self):
+        if self.get_logintime() < datetime.datetime.now()-datetime.timedelta(minutes=20):
+            return True
+        else:
+            return False
 
     def set_inventory_balls(self, item_id, count):
         self._no_balls = True
@@ -474,7 +488,8 @@ class PGoApi:
 
 
     def login(self, provider, username, password, cp, cached=False):
-        self.set_cp_cutoff(cp)
+        if self.get_cp_cutoff() == 0:
+            self.set_cp_cutoff(cp)
         if not isinstance(username, basestring) or not isinstance(password, basestring):
             raise AuthException("Username/password not correctly specified")
 
@@ -517,16 +532,18 @@ class PGoApi:
 
         self.log.info('Finished RPC login sequence (app simulation)')
         self.log.info('Login process completed')
-
         return True
 
 
 
 
-    def main_loop(self):
+    def main_loop(self, auth_service, username, password, cp, cached):
         self.heartbeat() # always heartbeat to start...
         while True:
             try:
+                if self.refresh_login():
+                    self.log.info("Refreshing login info")
+                    api.login(auth_service, username, password, cp, cached)
                 self.heartbeat()
                 sleep(1)
                 self.spin_near_fort()
