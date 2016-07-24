@@ -1,4 +1,6 @@
 * master/slave state system
-* basic auth for rest server
+* basic auth for rest server, example snippet http://flask.pocoo.org/snippets/8/
 * fix account creator script
 * create inventory overview like: PokeBallNormal: 1000 , Lucky Eggs: 17, ...
+* create poke evolution logic
+* create rest api calls for poke release/evolve
