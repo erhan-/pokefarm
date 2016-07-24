@@ -498,6 +498,8 @@ class PGoApi:
     def login(self, provider, username, password, cp, cached=False):
         if self.get_cp_cutoff() == 0:
             self.set_cp_cutoff(cp)
+
+        self.set_logintime()
         if not isinstance(username, basestring) or not isinstance(password, basestring):
             raise AuthException("Username/password not correctly specified")
 
