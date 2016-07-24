@@ -546,6 +546,26 @@ class PGoApi:
 
 
 
+    def init_evolution(self, pokemon_id):
+        print("Evolving")
+        response = api.evolve_pokemon(pokemon_id=pokemon_id).call()
+        print(response)
+        if 'result' not in response:
+
+            self.log.error("Error in evolve response: %d", response)
+            return False
+        if response['result'] == 1:
+            self.log.info("Pokemon %s evolved successfully.", pokemon_id)
+            return True
+        elif response['result'] == 3:
+            self.log.error("Evolve failed. Insufficiend resources.", pokemon_id)
+        elif response['result'] == 4:
+            self.log.error("Pokemon %s can not evolve.", pokemon_id)
+        else:
+            self.log.error("Error in evolve response: %d", response)
+        return False
+
+
 
     def main_loop(self, auth_service, username, password, cp, cached):
         self.heartbeat() # always heartbeat to start...
