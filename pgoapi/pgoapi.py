@@ -52,7 +52,7 @@ from POGOProtos.Networking.Requests.RequestType_pb2 import RequestType
 
 logger = logging.getLogger(__name__)
 
-
+import datetime
 from traceback import format_exc
 
 # Global variables
@@ -85,6 +85,7 @@ class PGoApi:
 
         self._cp_cutoff = 0 # release anything under this if we don't have it already
 
+        self._logintime = datetime.datetime.now()
         # keep them global for now (will only be read?)
         #self._bad_item_ids = [101,102,103,104,201,202,701,702,703,704,705] #Potion, Super Potion, RazzBerry, BlukBerry Add 201 to get rid of revive
 
@@ -99,6 +100,19 @@ class PGoApi:
     def get_cp_cutoff(self):
         return self._cp_cutoff
 
+
+    # getter and setter functions (we can add debug code and checks in the getter/setter functions)
+    def set_logintime(self):
+        self._logintime = datetime.datetime.now()
+
+    def get_logintime(self):
+        return self._logintime
+
+    def refresh_login(self):
+        if self.get_logintime() < datetime.datetime.now()-datetime.timedelta(minutes=20):
+            return True
+        else:
+            return False
 
     def set_inventory_balls(self, item_id, count):
         self._no_balls = True
@@ -253,7 +267,9 @@ class PGoApi:
             self.log.info("Walking to fort: %s", fort)
             self.walk_to((fort['latitude'], fort['longitude']))
             position = self._posf # FIXME ?
-            res = self.fort_search(fort_id = fort['id'], fort_latitude=fort['latitude'],fort_longitude=fort['longitude'],player_latitude=position[0],player_longitude=position[1]).call()['responses']['FORT_SEARCH']
+            res = self.fort_search(fort_id = fort['id'], fort_latitude=fort['latitude'],fort_longitude=fort['longitude'],player_latitude=position[0],player_longitude=position[1]).call()
+            if 'FORT_SEARCH' not in res['responses']:
+                return False
             self.log.info("Fort spinned: %s", res)
             if 'lure_info' in fort and not self.no_balls():
                 self.disk_encounter_pokemon(fort['lure_info'])
@@ -269,10 +285,16 @@ class PGoApi:
             encounter_id = lureinfo['encounter_id']
             fort_id = lureinfo['fort_id']
             position = self._posf
-            resp = self.disk_encounter(encounter_id=encounter_id, fort_id=fort_id, player_latitude=position[0], player_longitude=position[1]).call()['responses']['DISK_ENCOUNTER']
+            resp = self.disk_encounter(encounter_id=encounter_id, fort_id=fort_id, player_latitude=position[0], player_longitude=position[1]).call()
+            if 'DISK_ENCOUNTER' not in resp['responses']:
+                return False
         else:
             self.log.error("encounter_id not in lure_info: %s", lureinfo)
             return False
+
+        if 'result' not in resp:
+            return False
+
         if resp['result'] == 1:
             self.log.info("Started Disk Encounter, Pokemon ID: %s", resp['pokemon_data']['pokemon_id'])
             capture_status = -1
@@ -475,7 +497,10 @@ class PGoApi:
 
 
     def login(self, provider, username, password, cp, cached=False):
-        self.set_cp_cutoff(cp)
+        if self.get_cp_cutoff() == 0:
+            self.set_cp_cutoff(cp)
+
+        self.set_logintime()
         if not isinstance(username, basestring) or not isinstance(password, basestring):
             raise AuthException("Username/password not correctly specified")
 
@@ -518,16 +543,18 @@ class PGoApi:
 
         self.log.info('Finished RPC login sequence (app simulation)')
         self.log.info('Login process completed')
-
         return True
 
 
 
 
-    def main_loop(self):
+    def main_loop(self, auth_service, username, password, cp, cached):
         self.heartbeat() # always heartbeat to start...
         while True:
             try:
+                if self.refresh_login():
+                    self.log.info("Refreshing login info")
+                    self.login(auth_service, username, password, cp, cached)
                 self.heartbeat()
                 sleep(1)
                 self.spin_near_fort()

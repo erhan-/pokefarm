@@ -36,6 +36,7 @@ import requests
 import argparse
 import getpass
 
+
 # add directory of this file to PATH, so that the package will be found
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
@@ -162,6 +163,7 @@ def main():
             log.error("Login failed. Servers down maybe? Retrying in 5 seconds ...")
             sleep(10)
 
+
     # chain subrequests (methods) into one RPC call
 
     # get player profile call
@@ -207,7 +209,7 @@ def main():
         log.info("REST Server has been started")
 
     while True:
-        api.main_loop()
+        api.main_loop(config.auth_service, config.username, config.password, config.cp, config.cached)
     # alternative:
     # api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
 
