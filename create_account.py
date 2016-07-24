@@ -7,7 +7,7 @@ import requests
 
 landing_page = 'https://club.pokemon.com/de/pokemon-trainer-club/anmelden/'
 eltern_anmelden = 'https://club.pokemon.com/de/pokemon-trainer-club/eltern/anmelden'
-proxy = {"https": "http://127.0.0.1:8080"} # burp
+#proxy = {"https": "http://127.0.0.1:8080"} # burp
 headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36"}
 ssl_verify = False
 
@@ -27,7 +27,9 @@ class PTCAccountCreator:
         self.init_session()
 
     def init_session(self):
-        r = self.req_session.get(landing_page, headers=headers, proxies=proxy, verify=ssl_verify)
+        #r = self.req_session.get(landing_page, headers=headers, proxies=proxy, verify=ssl_verify)
+        r = self.req_session.get(landing_page, headers=headers, verify=ssl_verify)
+        print r.status_code
         self.csrf_token = self.req_session.cookies['csrftoken'] 
 
     def post_birthday(self):
@@ -38,7 +40,9 @@ class PTCAccountCreator:
         headers['Referer'] = landing_page
         r = None
         try:
-            r = self.req_session.post(landing_page, data, headers=headers, proxies=proxy, verify=ssl_verify)
+            #r = self.req_session.post(landing_page, data, headers=headers, proxies=proxy, verify=ssl_verify)
+            r = self.req_session.post(landing_page, data, headers=headers, verify=ssl_verify)
+            print r.status_code
         except:
             print "errrror in post_birthday"
 
@@ -47,12 +51,14 @@ class PTCAccountCreator:
                 self.csrf_token, self.username, self.password, self.password, self.email, self.email, self.username)
          
         try:
-            r = self.req_session.post(eltern_anmelden, data, headers=headers, proxies=proxy, verify=ssl_verify)
+            #r = self.req_session.post(eltern_anmelden, data, headers=headers, proxies=proxy, verify=ssl_verify)
+            r = self.req_session.post(eltern_anmelden, data, headers=headers, verify=ssl_verify)
+            print r.status_code
         except:
             print "error in post_account"
 
 
-ptc_creator = PTCAccountCreator("m3ta003", "asdfasdfasdf", "m3ta003@gmx.de", "19.07.1977")
+ptc_creator = PTCAccountCreator("m3ta009", "asdfasdfasdf", "m3ta009@gmx.de", "19.07.1977")
 ptc_creator.post_birthday()
 ptc_creator.post_account()
 
