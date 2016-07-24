@@ -551,7 +551,7 @@ class PGoApi:
             try:
                 if self.refresh_login():
                     self.log.info("Refreshing login info")
-                    api.login(auth_service, username, password, cp, cached)
+                    self.login(auth_service, username, password, cp, cached)
                 self.heartbeat()
                 sleep(1)
                 self.spin_near_fort()
