@@ -3,15 +3,18 @@
 
 
 import requests
+from time import sleep
+import logging
 
 
 landing_page = 'https://club.pokemon.com/de/pokemon-trainer-club/anmelden/'
 eltern_anmelden = 'https://club.pokemon.com/de/pokemon-trainer-club/eltern/anmelden'
 #proxy = {"https": "http://127.0.0.1:8080"} # burp
+proxy = None
 headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36"}
-ssl_verify = False
+ssl_verify = True
 
-
+#logging.basicConfig(level=logging.DEBUG)
 
 class PTCAccountCreator:
 
@@ -27,35 +30,57 @@ class PTCAccountCreator:
         self.init_session()
 
     def init_session(self):
-        #r = self.req_session.get(landing_page, headers=headers, proxies=proxy, verify=ssl_verify)
-        r = self.req_session.get(landing_page, headers=headers, verify=ssl_verify)
-        print r.status_code
-        self.csrf_token = self.req_session.cookies['csrftoken'] 
+        for _ in range(5):
+            if proxy != None:
+                r = self.req_session.get(landing_page, headers=headers, proxies=proxy, verify=ssl_verify)
+            else:
+                r = self.req_session.get(landing_page, headers=headers, verify=ssl_verify)
+            print "init_session resp: ", r.status_code
+            if r.status_code == 200:
+                self.csrf_token = self.req_session.cookies['csrftoken'] 
+                break
+            sleep(2)
 
     def post_birthday(self):
         data = "csrfmiddlewaretoken=%s&dob=%s&undefined=6&undefined=%s&country=DE&country=DE"%(
                 self.csrf_token, self.bday, self.bday.split(".")[-1])
-        print self.req_session.cookies
+        #print self.req_session.cookies
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
         headers['Referer'] = landing_page
-        r = None
-        try:
-            #r = self.req_session.post(landing_page, data, headers=headers, proxies=proxy, verify=ssl_verify)
-            r = self.req_session.post(landing_page, data, headers=headers, verify=ssl_verify)
-            print r.status_code
-        except:
-            print "errrror in post_birthday"
+        for _ in range(5):
+            try:
+                if proxy != None:
+                    r = self.req_session.post(landing_page, data, headers=headers, proxies=proxy, verify=ssl_verify)
+                else:
+                    r = self.req_session.post(landing_page, data, headers=headers, verify=ssl_verify)
+                print "post_birthday resp: ", r.status_code
+                if r.status_code == 302 or r.status_code == 200:
+                    break
+                sleep(2)
+            except:
+                print "error in post_birthday"
+                if proxy != None:
+                    break
+        print r.url
 
     def post_account(self):
         data = "csrfmiddlewaretoken=%s&username=%s&password=%s&confirm_password=%s&email=%s&confirm_email=%s&public_profile_opt_in=True&screen_name=%s&terms=on"%(
                 self.csrf_token, self.username, self.password, self.password, self.email, self.email, self.username)
-         
-        try:
-            #r = self.req_session.post(eltern_anmelden, data, headers=headers, proxies=proxy, verify=ssl_verify)
-            r = self.req_session.post(eltern_anmelden, data, headers=headers, verify=ssl_verify)
-            print r.status_code
-        except:
-            print "error in post_account"
+        for _ in range(5): 
+            try:
+                if proxy != None:
+                    r = self.req_session.post(eltern_anmelden, data, headers=headers, proxies=proxy, verify=ssl_verify)
+                else:
+                    r = self.req_session.post(eltern_anmelden, data, headers=headers, verify=ssl_verify)
+                print "post_account resp: ", r.status_code
+                if r.status_code == 320 or r.status_code == 200:
+                    break
+                sleep(2)
+            except:
+                print "error in post_account"
+                if proxy != None:
+                    break
+        print r.url
 
 
 ptc_creator = PTCAccountCreator("m3ta009", "asdfasdfasdf", "m3ta009@gmx.de", "19.07.1977")
@@ -220,17 +245,4 @@ Connection: keep-alive
 Set-Cookie: ebpdghrqhiowzrfafjht=998098021; expires=Sun, 24 Jul 2016 11:46:12 GMT; path=/
 
 
-
 """
-
-
-
-
-
-
-
-
-
-
-
-
