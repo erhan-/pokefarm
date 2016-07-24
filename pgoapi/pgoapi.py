@@ -222,6 +222,7 @@ class PGoApi:
 
             if self.no_balls():
                 self.log.error("No Balls left! Searching forts ...")
+            #self.log.info("Login State: " + repr(self._auth_provider.is_login()))
         return res
 
 
