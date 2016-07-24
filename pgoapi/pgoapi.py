@@ -290,7 +290,7 @@ class PGoApi:
         else:
             self.log.error("encounter_id not in lure_info: %s", lureinfo)
             return False
-        if resp['result'] == 1:
+        if 'result' in resp and resp['result'] == 1:
             self.log.info("Started Disk Encounter, Pokemon ID: %s", resp['pokemon_data']['pokemon_id'])
             capture_status = -1
             cp = resp['pokemon_data'].get('cp',self.get_cp_cutoff())
@@ -319,7 +319,7 @@ class PGoApi:
                     return False
                 sleep(2)
         #	POKEMON_INVENTORY_FULL = 5;
-        elif resp['result'] == 5:
+        elif 'result' in resp['result'] == 5:
             self.log.error("Your Poke Inventory is full, increasing cp cutoff")
             self.set_cp_cutoff(self.get_cp_cutoff() + 300)
             return False
