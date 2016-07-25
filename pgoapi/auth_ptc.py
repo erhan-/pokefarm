@@ -51,32 +51,24 @@ class AuthPtc(Auth):
         self.log.info('Login for: %s', username)
 
         head = {'User-Agent': 'niantic'}
-        try:
-            r = self._session.get(self.PTC_LOGIN_URL, headers=head, timeout=30)
-        #except requests.exceptions.ReadTimeout:
-        except Exception as e:
-            self.log.error('Server timed out')
-            return False
+        r = self._session.get(self.PTC_LOGIN_URL, headers=head)
 
         try:
             jdata = json.loads(r.content.decode('utf-8'))
-        except ValueError:
-            self.log.error('Could not decode response')
+            data = {
+                'lt': jdata['lt'],
+                'execution': jdata['execution'],
+                '_eventId': 'submit',
+                'username': username,
+                'password': password,
+            }
+        except ValueError as e:
+            self.log.error('Field missing in response: %s' % e)
             return False
-
-        data = {
-            'lt': jdata['lt'],
-            'execution': jdata['execution'],
-            '_eventId': 'submit',
-            'username': username,
-            'password': password,
-        }
-        try:
-            r1 = self._session.post(self.PTC_LOGIN_URL, data=data, headers=head, timeout=30)
-        #except requests.exceptions.ReadTimeout:
-        except Exception as e:
-            self.log.error('Server timed out')
+        except KeyError as e:
+            self.log.error('Field missing in response.content: %s' % e)
             return False
+        r1 = self._session.post(self.PTC_LOGIN_URL, data=data, headers=head)
 
         ticket = None
         try:
@@ -96,13 +88,7 @@ class AuthPtc(Auth):
             'code': ticket,
         }
 
-        try:
-            r2 = self._session.post(self.PTC_LOGIN_OAUTH, data=data1, timeout=30)
-        #except requests.exceptions.ReadTimeout:
-        except Exception as e:
-            self.log.error('Server timed out')
-            return False
-
+        r2 = self._session.post(self.PTC_LOGIN_OAUTH, data=data1)
         access_token = re.sub('&expires.*', '', r2.content.decode('utf-8'))
         access_token = re.sub('.*access_token=', '', access_token)
 
