@@ -1,14 +1,16 @@
 from faker import Faker
+# install with: pip install faker
 import string
 import random
-# install with: pip install faker
+import json
+import sys
 
 HEADER = "VERSION BUILD=8970419 RECORDER=FX\nTAB CLOSEALLOTHERS\n"
-
 
 def gen_password(length):
     # TODO: do this more secure
     return ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(length))
+
 
 def get_account_macro(username, password, question, answer, first_name, last_name, street, city, zipcode, bday):
     macro_template = """
@@ -50,16 +52,28 @@ def create_macro(account_macros):
 
     return "".join(ret)
 
-f = Faker()
 
+if len(sys.argv) != 3:
+    print "Usage: %s <account file> <output file>"%(sys.argv[0])
+    sys.exit(1)
+
+account_file = sys.argv[1]
+output_file = sys.argv[2]
+
+f = Faker()
+config = None
 macros = []
-for _ in range(10):
+with open(account_file, "r") as fd:
+    config = json.JSONDecoder().decode(fd.read())
+
+for account in config["accounts"]:
     first_name, last_name = f.name().split(" ")[:2]
-    username = f.username()
-    password = gen_password(10)
+    username = account["username"]
+    password = account["password"]
     question = gen_password(10)
     answer = gen_password(10)
     macros.append(get_account_macro(username, password, question, answer, first_name, last_name, "ErrorStreet", "Phoenix", "85002", "20.4.1980"))
 
 
-print create_macro(macros)
+with open(output_file, "w") as fd:
+    fd.write(create_macro(macros))
