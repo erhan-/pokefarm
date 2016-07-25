@@ -8,4 +8,6 @@ auth_cache_*
 *.swp
 *.swo
 *.log
+*.json
+*.iim
 logs/*
