@@ -37,6 +37,7 @@ import argparse
 import getpass
 
 
+
 # add directory of this file to PATH, so that the package will be found
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
@@ -93,11 +94,11 @@ def init_config():
         with open(config_file) as data:
             load.update(json.load(data))
 
+    
     # Read passed in Arguments
     required = lambda x: not x in load['accounts'][0].keys()
-    parser.add_argument("-a", "--auth_service", help="Auth Service ('ptc' or 'google')",
-        required=required("auth_service"))
-    parser.add_argument("-i", "--config_index", help="config_index", required=required("config_index"))
+    parser.add_argument("-a", "--auth_service", help="Auth Service ('ptc' or 'google')", required=required("auth_service"))
+    parser.add_argument("-i", "--config_index", help="config_index", type=int)#required=required("config_index"))
     parser.add_argument("-u", "--username", help="Username", required=required("username"))
     parser.add_argument("-p", "--password", help="Password", required=required("password"))
     parser.add_argument("-l", "--location", help="Location", required=required("location"))
@@ -105,20 +106,36 @@ def init_config():
     parser.add_argument("-c", "--cached", help="cached", action='store_true')
     parser.add_argument("-t", "--test", help="Only parse the specified location", action='store_true')
     parser.add_argument("-cp", "--cp", help="CP Cutoff", required=required("cp"))
+    parser.add_argument("--token", help="token will be send to django and django will return the actual config", type=str)
+    parser.add_argument("--master", help="master server example: http://10.8.0.1:8000", type=str)
     parser.add_argument("--rest", help="start rest api server", action='store_true')
     parser.set_defaults(DEBUG=False, TEST=False,CACHED=False)
     config = parser.parse_args()
-    load = load['accounts'][int(config.__dict__['config_index'])]
+
+    if config.config_index != None:
+        load = load['accounts'][config.config_index]
+    elif config.master != None and config.token != None:
+        resp = requests.post("%s/get_config/"%(config.master), data={"token": config.token})
+        #print resp.content
+        try:
+            load = json.JSONDecoder().decode(resp.content)
+            config.__dict__["port"] = load["port"]
+        except ValueError:
+            log.error("Invalid server response, this does not looke like json")
+            sys.exit()
+    else:
+        log.error("-i or --master, --token must be passed as argument")
+        return None
 
     # Passed in arguments shoud trump
     for key in config.__dict__:
         if key in load and config.__dict__[key] == None:
             config.__dict__[key] = load[key]
 
-    if config.auth_service not in ['ptc', 'google']:
-      log.error("Invalid Auth service specified! ('ptc' or 'google')")
-      return None
 
+    if config.auth_service not in ['ptc', 'google']:
+        log.error("Invalid Auth service specified! ('ptc' or 'google')")
+        return None
     return config
 
 
@@ -127,18 +144,16 @@ def main():
     config = init_config()
     if not config:
         return
-
+    print config
     # log settings
     # log format
-    logging.basicConfig(filename="logs/"+str(config.config_index)+"-"+config.username+".log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+    logging.basicConfig(filename="logs/"+str(config.port)+"-"+config.username+".log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
     # log level for http request class
     logging.getLogger("requests").setLevel(logging.WARNING)
     # log level for main pgoapi class
     logging.getLogger("pgoapi").setLevel(logging.INFO)
     # log level for internal pgoapi class
     logging.getLogger("rpc_api").setLevel(logging.INFO)
-
-
 
 
     if config.debug:
@@ -205,13 +220,16 @@ def main():
         import rest_server as rest
         import thread
         rest.api = api
-        thread.start_new_thread(lambda: rest.app.run(port=5000+int(config.config_index)), ())
+        if config.config_index != None:
+            thread.start_new_thread(lambda: rest.app.run(port=5000+config.config_index), ())
+        else:
+            thread.start_new_thread(lambda: rest.app.run(port=config.port), ())
         log.info("REST Server has been started")
 
     while True:
         api.main_loop(config.auth_service, config.username, config.password, config.cp, config.cached)
-    # alternative:
-    # api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
+     #alternative:
+     #api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
 
 
 if __name__ == '__main__':
