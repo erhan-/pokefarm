@@ -46,7 +46,8 @@ def create_macro(account_macros):
     ret = [HEADER]
     count = 2
     for account_macro in account_macros:
-        ret.append("\nTAB OPEN\nTAB T=%d\n"%(count))
+        #ret.append("\nTAB OPEN\nTAB T=%d\n"%(count))
+        ret.append("\nPAUSE\n")
         ret.append(account_macro)
         count += 1
 

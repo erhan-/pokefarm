@@ -5,14 +5,15 @@
 import requests
 from time import sleep
 import logging
+import json
 
 
 landing_page = 'https://club.pokemon.com/de/pokemon-trainer-club/anmelden/'
 eltern_anmelden = 'https://club.pokemon.com/de/pokemon-trainer-club/eltern/anmelden'
-#proxy = {"https": "http://127.0.0.1:8080"} # burp
-proxy = None
+proxy = {"https": "http://127.0.0.1:8080"} # burp
+#proxy = None
 headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36"}
-ssl_verify = True
+ssl_verify = False
 
 #logging.basicConfig(level=logging.DEBUG)
 
@@ -47,6 +48,7 @@ class PTCAccountCreator:
         #print self.req_session.cookies
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
         headers['Referer'] = landing_page
+        r = False
         for _ in range(5):
             try:
                 if proxy != None:
@@ -61,12 +63,14 @@ class PTCAccountCreator:
                 print "error in post_birthday"
                 if proxy != None:
                     break
-        print r.url
+        if r:
+            print r.url
 
     def post_account(self):
         data = "csrfmiddlewaretoken=%s&username=%s&password=%s&confirm_password=%s&email=%s&confirm_email=%s&public_profile_opt_in=True&screen_name=%s&terms=on"%(
                 self.csrf_token, self.username, self.password, self.password, self.email, self.email, self.username)
-        for _ in range(5):
+        r = False
+        for _ in range(5): 
             try:
                 if proxy != None:
                     r = self.req_session.post(eltern_anmelden, data, headers=headers, proxies=proxy, verify=ssl_verify)
@@ -80,9 +84,23 @@ class PTCAccountCreator:
                 print "error in post_account"
                 if proxy != None:
                     break
-        print r.url
+        if r:
+            print r.url
 
 
+#config = None
+#with open("test_accounts2.json", "r") as fd:
+#    config = json.JSONDecoder().decode(fd.read())
+#
+#for account in config["accounts"]:
+#    ptc_creator = PTCAccountCreator(account["username"], account["password"], account["username"]+"@jesusanswers.com", "19.07.1977")
+#    ptc_creator.post_birthday()
+#    ptc_creator.post_account()
+#
+
+#ptc_creator = PTCAccountCreator("m3ta009", "asdfasdfasdf", "m3ta009@gmx.de", "19.07.1977")
+#ptc_creator.post_birthday()
+#ptc_creator.post_account()
 username = "frischomon92"
 password = "eEzRM8QD"
 ptc_creator = PTCAccountCreator(username, password, username+"@sicher.me", "11.03.1987")
