@@ -435,18 +435,14 @@ class PGoApi:
             # order the pokemons by cp
             pokemons = sorted(pokemons, lambda x,y: cmp(x['cp'],y['cp']),reverse=True)
 
-            if len(pokemons) >= MAX_POKEMON:
-                    pokemon_list = pokemons[:MAX_POKEMON]
-                    #print(pokemon_list)
-            else:
-                    pokemon_list = pokemons[:MIN_POKEMON]
+            pokemon_list = pokemons[:MIN_POKEMON]
             for pokemon in pokemon_list:
                 # calculate IV value
                 iva = pokemon.get('individual_attack', 0)
                 ivd = pokemon.get('individual_defense', 0)
                 ivs = pokemon.get('individual_stamina', 0)
                 iv = ((iva+ivd+ivs)/45.0)*100
-                if 'cp'in pokemon and pokemon['cp'] < self.get_cp_cutoff() and iv < 90:
+                if pokemon['cp'] < self.get_cp_cutoff() and iv < 90:
                     self.log.info("Releasing Pokemon %d with CP: %d and IV: %f", pokemon["pokemon_id"], pokemon["cp"], iv)
                     self.release_pokemon(pokemon_id = pokemon["id"])
 
