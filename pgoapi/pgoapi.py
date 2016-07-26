@@ -427,23 +427,28 @@ class PGoApi:
                 item = inventory_item['inventory_item_data']['item']
                 if item['item_id'] in BAD_ITEM_IDS and "count" in item:
                     self.recycle_inventory_item(item_id=item['item_id'],count=item['count'])
-
         # Remove duplicate Pokemons
         for pokemons in caught_pokemon.values():
             # Check if we have more than one of this Pokemon
-            if len(pokemons) > 1:
-                pokemons = sorted(pokemons, lambda x,y: cmp(x['cp'],y['cp']),reverse=True)
+            MIN_POKEMON = 1
+            MAX_POKEMON = 3
+            # order the pokemons by cp
+            pokemons = sorted(pokemons, lambda x,y: cmp(x['cp'],y['cp']),reverse=True)
 
-                # Keep the Pokemon with the highest CP or CP >= CP_CUTOFF
-                for pokemon in pokemons[1:]:
-                    # calculate IV value
-                    iva = pokemon.get('individual_attack', 0)
-                    ivd = pokemon.get('individual_defense', 0)
-                    ivs = pokemon.get('individual_stamina', 0)
-                    iv = ((iva+ivd+ivs)/45.0)*100
-                    if 'cp' in pokemon and pokemon['cp'] < self.get_cp_cutoff() and iv < 85:
-                        self.log.info("Releasing Pokemon %d with CP: %d and IV: %f", pokemon["pokemon_id"], pokemon["cp"], iv)
-                        self.release_pokemon(pokemon_id = pokemon["id"])
+            if len(pokemons) >= MAX_POKEMON:
+                    pokemon_list = pokemons[:MAX_POKEMON]
+                    print(pokemon_list)
+            else:
+                    pokemon_list = pokemons[:MIN_POKEMON]
+            for pokemon in pokemon_list:
+                # calculate IV value
+                iva = pokemon.get('individual_attack', 0)
+                ivd = pokemon.get('individual_defense', 0)
+                ivs = pokemon.get('individual_stamina', 0)
+                iv = ((iva+ivd+ivs)/45.0)*100
+                if 'cp'in pokemon and pokemon['cp'] < self.get_cp_cutoff() and iv < 90:
+                    self.log.info("Releasing Pokemon %d with CP: %d and IV: %f", pokemon["pokemon_id"], pokemon["cp"], iv)
+                    self.release_pokemon(pokemon_id = pokemon["id"])
 
         return self.call()
 
@@ -482,6 +487,13 @@ class PGoApi:
                 # if status == RpcEnum.CATCH_SUCCESS:
                 if status == 1:
                     self.log.info("Caught Pokemon: : %s", catch_attempt)
+                    """
+                    Make Request to Master Server and add this Pokemon with individual pokemon id
+
+                    request with post and requests module, plus senden des pass tokens for the Master
+                    Follwing values need to be stored to the database:
+                    captured pokemon id
+                    """
                     sleep(2)
                     return catch_attempt
                 elif status != 2:
