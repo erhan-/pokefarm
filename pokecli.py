@@ -119,7 +119,10 @@ def init_config():
         #print resp.content
         try:
             load = json.JSONDecoder().decode(resp.content)
+            print load
             config.__dict__["port"] = load["port"]
+            config.__dict__["location"] = "%f, %f"%(load["latitude"], load["longitude"])
+            config.__dict__["auth_service"] = load["auth_service"]
         except ValueError:
             log.error("Invalid server response, this does not looke like json")
             sys.exit()
@@ -130,6 +133,7 @@ def init_config():
     # Passed in arguments shoud trump
     for key in config.__dict__:
         if key in load and config.__dict__[key] == None:
+            print load[key]
             config.__dict__[key] = load[key]
 
 
