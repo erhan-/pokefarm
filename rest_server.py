@@ -55,7 +55,8 @@ def evolve():
     try:
         poke_id = request.form.get('pokeid', type=int)
         response = api.evolve_pokemon(pokemon_id=poke_id).call()
-        return jsonify({"status": response.get('responses').get('EVOLVE_POKEMON')})
+        print(response.get('responses').get('EVOLVE_POKEMON'))
+        return jsonify(response.get('responses').get('EVOLVE_POKEMON'))
     except Exception as e:
         print(e)
         return jsonify({"status": "error"})
@@ -66,7 +67,8 @@ def release():
     try:
         poke_id = request.form.get('pokeid', type=int)
         response = api.release_pokemon(pokemon_id=poke_id).call()
-        return jsonify({"status": response.get('responses').get('RELEASE_POKEMON')})
+        print(response.get('responses').get('RELEASE_POKEMON',99))
+        return jsonify(response.get('responses').get('RELEASE_POKEMON',99))
     except Exception as e:
         print(e)
         return jsonify({"status": "error"})

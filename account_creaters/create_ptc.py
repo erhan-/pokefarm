@@ -38,7 +38,7 @@ class PTCAccountCreator:
                 r = self.req_session.get(landing_page, headers=headers, verify=ssl_verify)
             print "init_session resp: ", r.status_code
             if r.status_code == 200:
-                self.csrf_token = self.req_session.cookies['csrftoken'] 
+                self.csrf_token = self.req_session.cookies['csrftoken']
                 break
             sleep(2)
 
@@ -88,19 +88,24 @@ class PTCAccountCreator:
             print r.url
 
 
-config = None
-with open("test_accounts2.json", "r") as fd:
-    config = json.JSONDecoder().decode(fd.read())
-
-for account in config["accounts"]:
-    ptc_creator = PTCAccountCreator(account["username"], account["password"], account["username"]+"@jesusanswers.com", "19.07.1977")
-    ptc_creator.post_birthday()
-    ptc_creator.post_account()
-
+#config = None
+#with open("test_accounts2.json", "r") as fd:
+#    config = json.JSONDecoder().decode(fd.read())
+#
+#for account in config["accounts"]:
+#    ptc_creator = PTCAccountCreator(account["username"], account["password"], account["username"]+"@jesusanswers.com", "19.07.1977")
+#    ptc_creator.post_birthday()
+#    ptc_creator.post_account()
+#
 
 #ptc_creator = PTCAccountCreator("m3ta009", "asdfasdfasdf", "m3ta009@gmx.de", "19.07.1977")
 #ptc_creator.post_birthday()
 #ptc_creator.post_account()
+username = "frischomon92"
+password = "eEzRM8QD"
+ptc_creator = PTCAccountCreator(username, password, username+"@sicher.me", "11.03.1987")
+ptc_creator.post_birthday()
+ptc_creator.post_account()
 
 
 
@@ -117,11 +122,11 @@ Accept-Encoding: gzip, deflate, sdch, br
 Accept-Language: en-US,en;q=0.8,de;q=0.6,fr;q=0.4
 Cookie: django_language=de; s_ppvl=%5B%5BB%5D%5D; s_vnum=1500896475720%26vn%3D1; s_cc=true; _gat_UA-625471-2=1; s_sq=pcomprod%252Ctpciglobalprod%3D%2526pid%253DHomepage%2526pidt%253D1%2526oid%253Dhttps%25253A%25252F%25252Fclub.pokemon.com%25252Fde%25252Fpokemon-trainer-club%25252Flogin%2526ot%253DA;
 s_fid=0FA986871BB1A350-26BF472A739C3DCB;
-eVar40=3; s_ppn=Homepage; 
-s_invisit=true; 
-s_nr=1469360506523-New; 
-gpv_pn=Homepage; 
-ebpdghrqhiowzrfafjht=637078005; 
+eVar40=3; s_ppn=Homepage;
+s_invisit=true;
+s_nr=1469360506523-New;
+gpv_pn=Homepage;
+ebpdghrqhiowzrfafjht=637078005;
 s_ppv=Homepage%2C27%2C25%2C873%2C950%2C873%2C1920%2C1039%2C1%2CL;
 _ga=GA1.2.775913039.1469360478
 
