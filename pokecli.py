@@ -151,7 +151,7 @@ def main():
     config = init_config()
     if not config:
         return
-    print config
+    #print config
     # log settings
     # log format
     logging.basicConfig(filename="logs/"+str(config.port)+"-"+config.username+".log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
@@ -235,7 +235,7 @@ def main():
         log.info("REST Server has been started")
 
     while True:
-        api.main_loop(config.auth_service, config.username, config.password, config.cp, config.cached)
+        api.main_loop(config.auth_service, config.username, config.password, config.min_cp, config.cached)
      #alternative:
      #api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
 
