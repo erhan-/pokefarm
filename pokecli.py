@@ -184,7 +184,7 @@ def main():
 
     logged_in = False
     while(logged_in == False):
-        logged_in = api.login(config.auth_service, config.username, config.password, config.cp, config.cached)
+        logged_in = api.login(config.auth_service, config.username, config.password, config.min_cp, config.cached)
         if not logged_in:
             log.error("Login failed. Servers down maybe? Retrying in 5 seconds ...")
             sleep(10)
