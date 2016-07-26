@@ -437,7 +437,7 @@ class PGoApi:
 
             if len(pokemons) >= MAX_POKEMON:
                     pokemon_list = pokemons[:MAX_POKEMON]
-                    print(pokemon_list)
+                    #print(pokemon_list)
             else:
                     pokemon_list = pokemons[:MIN_POKEMON]
             for pokemon in pokemon_list:
@@ -562,7 +562,7 @@ class PGoApi:
     def init_evolution(self, pokemon_id):
         print("Evolving")
         response = api.evolve_pokemon(pokemon_id=pokemon_id).call()
-        print(response)
+        #print(response)
         if 'result' not in response:
 
             self.log.error("Error in evolve response: %d", response)
