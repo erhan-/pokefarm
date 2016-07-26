@@ -94,7 +94,7 @@ def init_config():
         with open(config_file) as data:
             load.update(json.load(data))
 
-    
+
     # Read passed in Arguments
     required = lambda x: not x in load['accounts'][0].keys()
     parser.add_argument("-a", "--auth_service", help="Auth Service ('ptc' or 'google')", required=required("auth_service"))
@@ -123,6 +123,12 @@ def init_config():
             config.__dict__["port"] = load["port"]
             config.__dict__["location"] = "%f, %f"%(load["latitude"], load["longitude"])
             config.__dict__["auth_service"] = load["auth_service"]
+            config.__dict__["username"] = load["username"]
+            config.__dict__["password"] = load["password"]
+            #config.__dict__["latitude"] = load["latitude"]
+            #config.__dict__["longitude"] = load["longitude"]
+            config.__dict__["min_cp"] = load["min_cp"]
+
         except ValueError:
             log.error("Invalid server response, this does not looke like json")
             sys.exit()
@@ -148,7 +154,7 @@ def main():
     config = init_config()
     if not config:
         return
-    print config
+    #print config
     # log settings
     # log format
     logging.basicConfig(filename="logs/"+str(config.port)+"-"+config.username+".log", level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
@@ -165,7 +171,8 @@ def main():
         logging.getLogger("pgoapi").setLevel(logging.DEBUG)
         logging.getLogger("rpc_api").setLevel(logging.DEBUG)
 
-    position = get_pos_by_name(config.location)
+    #position = get_pos_by_name(config.location)
+    position = (config.latitude, config.longitude ,0)
     if config.test:
         return
 
@@ -231,7 +238,7 @@ def main():
         log.info("REST Server has been started")
 
     while True:
-        api.main_loop(config.auth_service, config.username, config.password, config.cp, config.cached)
+        api.main_loop(config.auth_service, config.username, config.password, config.min_cp, config.cached)
      #alternative:
      #api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
 
