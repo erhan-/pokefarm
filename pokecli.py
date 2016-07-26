@@ -119,12 +119,14 @@ def init_config():
         #print resp.content
         try:
             load = json.JSONDecoder().decode(resp.content)
+            print load
             config.__dict__["port"] = load["port"]
+            #config.__dict__["location"] = "%f, %f"%(load["latitude"], load["longitude"])
+            config.__dict__["auth_service"] = load["auth_service"]
             config.__dict__["username"] = load["username"]
             config.__dict__["password"] = load["password"]
             config.__dict__["latitude"] = load["latitude"]
             config.__dict__["longitude"] = load["longitude"]
-            config.__dict__["auth_service"] = load["auth_service"]
             config.__dict__["min_cp"] = load["min_cp"]
 
         except ValueError:
@@ -137,6 +139,7 @@ def init_config():
     # Passed in arguments shoud trump
     for key in config.__dict__:
         if key in load and config.__dict__[key] == None:
+            print load[key]
             config.__dict__[key] = load[key]
 
 
@@ -181,7 +184,7 @@ def main():
 
     logged_in = False
     while(logged_in == False):
-        logged_in = api.login(config.auth_service, config.username, config.password, config.cp, config.cached)
+        logged_in = api.login(config.auth_service, config.username, config.password, config.min_cp, config.cached)
         if not logged_in:
             log.error("Login failed. Servers down maybe? Retrying in 5 seconds ...")
             sleep(10)
