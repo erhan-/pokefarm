@@ -62,6 +62,15 @@ def evolve():
         return jsonify({"status": "error"})
 
 
+
+@app.route("/nickname", methods=["POST"])
+def nickname():
+        nickname = request.form.get('nickname', type=str)
+        response = api.claim_codename(codename=nickname).call()
+        return jsonify(response)
+
+
+
 @app.route("/release", methods=["POST"])
 def release():
     try:
